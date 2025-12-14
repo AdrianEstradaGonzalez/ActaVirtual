@@ -1,4 +1,4 @@
-package com.alignme
+package com.actavirtual
 
 import android.app.Application
 import com.facebook.react.PackageList

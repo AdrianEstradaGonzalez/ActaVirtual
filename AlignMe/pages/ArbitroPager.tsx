@@ -18,9 +18,9 @@ import { useCommunity } from "../context/CommunityContext";
 
 const { width } = Dimensions.get("window");
 
-const STORAGE_KEY_ALINEACIONES = '@alignme_alineaciones';
-const STORAGE_KEY_MODO = '@alignme_modo';
-const STORAGE_KEY_SWAP = '@alignme_swap';
+const STORAGE_KEY_ALINEACIONES = '@actavirtual_alineaciones';
+const STORAGE_KEY_MODO = '@actavirtual_modo';
+const STORAGE_KEY_SWAP = '@actavirtual_swap';
 
 export default function ArbitroPager() {
   const { theme } = useCommunity();

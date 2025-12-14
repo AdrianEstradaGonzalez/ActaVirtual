@@ -42,9 +42,9 @@ const posiciones4x4 = {
   traseras: ["I"],
 };
 
-const STORAGE_KEY_ENTRENADOR_MODO = '@alignme_entrenador_modo';
-const STORAGE_KEY_ENTRENADOR_CODIGO = '@alignme_entrenador_codigo';
-const STORAGE_KEY_ENTRENADOR_VALORES = '@alignme_entrenador_valores';
+const STORAGE_KEY_ENTRENADOR_MODO = '@actavirtual_entrenador_modo';
+const STORAGE_KEY_ENTRENADOR_CODIGO = '@actavirtual_entrenador_codigo';
+const STORAGE_KEY_ENTRENADOR_VALORES = '@actavirtual_entrenador_valores';
 
 export default function EntrenadorView() {
   const { theme, assets, communityId } = useCommunity();

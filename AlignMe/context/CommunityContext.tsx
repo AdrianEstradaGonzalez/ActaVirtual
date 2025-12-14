@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommunityId, Theme, getTheme } from '../config/themes';
 import { CommunityAssets, getCommunityAssets } from '../config/assets';
 
-const STORAGE_KEY = '@alignme_community';
+const STORAGE_KEY = '@actavirtual_community';
 
 interface CommunityContextType {
   communityId: CommunityId | null;

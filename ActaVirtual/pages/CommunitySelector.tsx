@@ -55,7 +55,7 @@ export const CommunitySelector: React.FC<CommunitySelectorProps> = ({ onSelect }
             >
               <View style={styles.flagImageContainer}>
                 <Image
-                  source={require('../assets/asturias/bandera.png')}
+                  source={require('../assets/asturias/Flag_of_Asturias.png')}
                   style={styles.flagImage}
                   resizeMode="contain"
                 />

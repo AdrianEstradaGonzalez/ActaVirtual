@@ -1,10 +1,11 @@
-import { View, ImageBackground, Image, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from "react-native";
+import { View, ImageBackground, Image, TouchableOpacity, ActivityIndicator, Dimensions, Platform, TextInput, Alert } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Text, Provider as PaperProvider, Card } from "react-native-paper";
 import EntrenadorView from "./pages/EntrenadorView";
 import QRView from "./pages/QRView";
 import ArbitroPager from "./pages/ArbitroPager";
+import DesignacionesView from "./pages/DesignacionesView";
 import { CommunityProvider, useCommunity } from "./context/CommunityContext";
 import { CommunitySelector } from "./pages/CommunitySelector";
 import { CommunitySwitcher } from "./components/CommunitySwitcher";
@@ -19,6 +20,7 @@ type RootStackParamList = {
   Entrenador: undefined;
   Arbitro: undefined;
   QRView: { data: string };
+  Designaciones: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -26,12 +28,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function HomeScreen({ navigation }: any) {
   const { theme, assets, communityId, clearCommunity } = useCommunity();
   const [showSelector, setShowSelector] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   if (!theme || !assets || !communityId) {
     return null; // o un loading spinner
   }
 
   const AppStyles = createAppStyles(theme);
+
+  const handleLogin = () => {
+    navigation.navigate('Designaciones');
+  };
 
   const handleChangeCommunity = async () => {
     await clearCommunity();
@@ -65,9 +73,8 @@ function HomeScreen({ navigation }: any) {
 
             {/* Sección 2: Contenedor Principal */}
             <Card style={AppStyles.card} mode="elevated">
-            <Card.Content style={AppStyles.cardContent}>
               {/* Logos horizontalmente centrados */}
-              <View style={AppStyles.logosRow}>
+              <View style={[AppStyles.logosRow, { alignSelf: 'center' }]}>
                 <Image
                   source={assets.appLogo}
                   style={AppStyles.secondaryLogo}
@@ -81,38 +88,70 @@ function HomeScreen({ navigation }: any) {
                   />
                 )}
               </View>
-              <Text variant="headlineLarge" style={AppStyles.title}>
+              <Text variant="headlineLarge" style={[AppStyles.title, { alignSelf: 'center' }]}>
                 {assets.appTitle}
               </Text>
 
-              {/* Botones de acción */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => navigation.navigate("Entrenador")}
-                style={AppStyles.actionCard}
-              >
-                <View style={AppStyles.actionLeftBar} />
-                <View style={AppStyles.actionBorder} pointerEvents="none" />
-                <View style={{ flex: 1, alignItems: "center" }}>
-                  <Text style={AppStyles.actionText}>Entrenador</Text>
-                </View>
-                <Text style={AppStyles.actionArrow}>›</Text>
-              </TouchableOpacity>
+              {/* Campo de Email */}
+              <TextInput
+                style={{
+                  backgroundColor: '#fff',
+                  width: '100%',
+                  borderWidth: 1,
+                  borderColor: '#cbd5e1',
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  fontSize: 16,
+                  color: '#0f172a',
+                  marginBottom: 12,
+                }}
+                placeholder="Email"
+                placeholderTextColor="#94a3b8"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
 
+              {/* Campo de Contraseña */}
+              <TextInput
+                style={{
+                  backgroundColor: '#fff',
+                  width: '100%',
+                  borderWidth: 1,
+                  borderColor: '#cbd5e1',
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  fontSize: 16,
+                  color: '#0f172a',
+                  marginBottom: 16,
+                }}
+                placeholder="Contraseña"
+                placeholderTextColor="#94a3b8"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="password"
+              />
+
+              {/* Botón de Iniciar Sesión */}
               <TouchableOpacity
                 activeOpacity={0.85}
-                onPress={() => navigation.navigate("Arbitro")}
+                onPress={handleLogin}
                 style={AppStyles.actionCard}
               >
                 <View style={AppStyles.actionLeftBar} />
                 <View style={AppStyles.actionBorder} pointerEvents="none" />
                 <View style={{ flex: 1, alignItems: "center" }}>
-                  <Text style={AppStyles.actionText}>Árbitro</Text>
+                  <Text style={AppStyles.actionText}>Iniciar Sesión</Text>
                 </View>
                 <Text style={AppStyles.actionArrow}>›</Text>
               </TouchableOpacity>
-            </Card.Content>
-          </Card>
+            </Card>
 
             {/* Sección 3: Logo Footer (Patrocinador) */}
             <View style={{ height: 80, marginTop: 12, alignItems: 'center', justifyContent: 'center' }}>
@@ -156,9 +195,8 @@ function HomeScreen({ navigation }: any) {
 
           {/* Sección 2: Contenedor Principal */}
           <Card style={AppStyles.card} mode="elevated">
-          <Card.Content style={AppStyles.cardContent}>
             {/* Logos horizontalmente centrados */}
-            <View style={AppStyles.logosRow}>
+            <View style={[AppStyles.logosRow, { alignSelf: 'center' }]}>
               <Image
                 source={assets.appLogo}
                 style={AppStyles.secondaryLogo}
@@ -170,38 +208,70 @@ function HomeScreen({ navigation }: any) {
                 resizeMode="contain"
               />
             </View>
-            <Text variant="headlineLarge" style={AppStyles.title}>
+            <Text variant="headlineLarge" style={[AppStyles.title, { alignSelf: 'center' }]}>
               {assets.appTitle}
             </Text>
 
-            {/* Botones con estilo tipo "liga" */}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => navigation.navigate("Entrenador")}
-              style={AppStyles.actionCard}
-            >
-              <View style={AppStyles.actionLeftBar} />
-              <View style={AppStyles.actionBorder} pointerEvents="none" />
-              <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={AppStyles.actionText}>Entrenador</Text>
-              </View>
-              <Text style={AppStyles.actionArrow}>›</Text>
-            </TouchableOpacity>
+            {/* Campo de Email */}
+            <TextInput
+              style={{
+                backgroundColor: '#fff',
+                width: '100%',
+                borderWidth: 1,
+                borderColor: '#cbd5e1',
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                fontSize: 16,
+                color: '#0f172a',
+                marginBottom: 12,
+              }}
+              placeholder="Email"
+              placeholderTextColor="#94a3b8"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
 
+            {/* Campo de Contraseña */}
+            <TextInput
+              style={{
+                backgroundColor: '#fff',
+                width: '100%',
+                borderWidth: 1,
+                borderColor: '#cbd5e1',
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                fontSize: 16,
+                color: '#0f172a',
+                marginBottom: 16,
+              }}
+              placeholder="Contraseña"
+              placeholderTextColor="#94a3b8"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="password"
+            />
+
+            {/* Botón de Iniciar Sesión */}
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => navigation.navigate("Arbitro")}
+              onPress={handleLogin}
               style={AppStyles.actionCard}
             >
               <View style={AppStyles.actionLeftBar} />
               <View style={AppStyles.actionBorder} pointerEvents="none" />
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={AppStyles.actionText}>Árbitro</Text>
+                <Text style={AppStyles.actionText}>Iniciar Sesión</Text>
               </View>
               <Text style={AppStyles.actionArrow}>›</Text>
             </TouchableOpacity>
-          </Card.Content>
-        </Card>
+          </Card>
 
           {/* Sección 3: Logo Footer (Espacio reservado, sin contenido en Asturias) */}
           <View style={{ height: 80, marginTop: 12, alignItems: 'center', justifyContent: 'center' }}>
@@ -275,6 +345,11 @@ function AppContent() {
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="Designaciones"
+          component={DesignacionesView}
+          options={{ title: "Mis Designaciones" }}
+        />
         <Stack.Screen
           name="Entrenador"
           component={EntrenadorView}

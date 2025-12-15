@@ -31,7 +31,7 @@ export interface CommunityAssets {
  */
 const AsturiasAssets: CommunityAssets = {
   headerLogo: require('../assets/asturias/logo_fvbpa.png'),
-  appLogo: require('../assets/asturias/258.png'),
+  appLogo: require('../assets/logo_sin_fondo.png'),
   appLogoWithLetters: require('../assets/asturias/logo_sinletras.png'),
   background: require('../assets/fondo.jpeg'),
   flag: require('../assets/asturias/bandera.png'),
@@ -43,7 +43,7 @@ const AsturiasAssets: CommunityAssets = {
  */
 const BalearesAssets: CommunityAssets = {
   headerLogo: require('../assets/baleares/HEADER_BALEAR.png'),
-  appLogo: require('../assets/baleares/258.png'),
+  appLogo: require('../assets/logo_sin_fondo.png'),
   topRightLogo: require('../assets/baleares/LOGO_LETRAS.png'),
   background: require('../assets/fondo.jpeg'),
   sponsorLogo: require('../assets/baleares/LogoPatrocinio.jpg'),

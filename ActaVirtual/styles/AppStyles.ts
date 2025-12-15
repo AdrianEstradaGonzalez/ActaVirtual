@@ -36,7 +36,7 @@ export const createAppStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 28,
     paddingVertical: 20 * scaleHeight,
     paddingHorizontal: 20,
-    alignItems: "center",
+    alignItems: "stretch",
     justifyContent: "center", // 🔹 centra contenido interno
     opacity: 0.95,
 

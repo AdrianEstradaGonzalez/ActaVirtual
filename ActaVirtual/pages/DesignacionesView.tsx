@@ -6,80 +6,13 @@ import CustomAlert from '../components/CustomAlert';
 import DrawerMenu from '../components/DrawerMenu';
 import NavBarBack from './NavBarBack';
 import VectorIcon from '../components/VectorIcon';
+import { 
+  Partido, 
+  PARTIDOS_CONFIRMADOS, 
+  PARTIDOS_PROPUESTOS 
+} from '../types/MockData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-type Partido = {
-  id: string;
-  numeroPartido: string;
-  fecha: string;
-  hora: string;
-  lugar: string;
-  categoria: string;
-  equipoLocal: string;
-  equipoVisitante: string;
-  arbitro1: string;
-  arbitro2: string;
-  arbitro3: string;
-};
-
-const PARTIDOS_CONFIRMADOS: Partido[] = [
-  {
-    id: '1',
-    numeroPartido: 'P-2025-0147',
-    fecha: '15/12/2025',
-    hora: '18:00',
-    lugar: 'Polideportivo Municipal Sant Jordi',
-    categoria: 'Senior',
-    equipoLocal: 'FC Barcelona',
-    equipoVisitante: 'Real Madrid',
-    arbitro1: 'Juan Pérez',
-    arbitro2: 'María García',
-    arbitro3: 'Carlos López',
-  },
-  {
-    id: '2',
-    numeroPartido: 'P-2025-0148',
-    fecha: '16/12/2025',
-    hora: '20:30',
-    lugar: 'Pabellón de Son Moix',
-    categoria: 'Juvenil A',
-    equipoLocal: 'Atlético Madrid',
-    equipoVisitante: 'Valencia CF',
-    arbitro1: 'Juan Pérez',
-    arbitro2: 'Ana Martínez',
-    arbitro3: 'Luis Fernández',
-  },
-];
-
-const PARTIDOS_PROPUESTOS: Partido[] = [
-  {
-    id: '3',
-    numeroPartido: 'P-2025-0149',
-    fecha: '18/12/2025',
-    hora: '19:00',
-    lugar: 'Centro Deportivo Es Fortí',
-    categoria: 'Juvenil B',
-    equipoLocal: 'Sevilla FC',
-    equipoVisitante: 'Real Betis',
-    arbitro1: 'Juan Pérez',
-    arbitro2: 'Pedro Sánchez',
-    arbitro3: 'Laura Ruiz',
-  },
-  {
-    id: '4',
-    numeroPartido: 'P-2025-0150',
-    fecha: '20/12/2025',
-    hora: '17:30',
-    lugar: 'Polideportivo Can Capó',
-    categoria: 'Cadete',
-    equipoLocal: 'Villarreal CF',
-    equipoVisitante: 'Athletic Bilbao',
-    arbitro1: 'Juan Pérez',
-    arbitro2: 'Carmen Díaz',
-    arbitro3: 'Roberto Jiménez',
-  },
-];
 
 export default function DesignacionesView({ navigation }: any) {
   const { theme, assets } = useCommunity();
@@ -189,8 +122,7 @@ export default function DesignacionesView({ navigation }: any) {
   };
 
   const iniciarActa = (partido: Partido) => {
-    // TODO: Navegar a la vista de acta
-    console.log('Iniciar acta para partido:', partido.id);
+    navigation.navigate('ActaVirtual', { partido });
   };
 
   // Función para renderizar una tarjeta de partido

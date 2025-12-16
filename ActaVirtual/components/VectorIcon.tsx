@@ -57,6 +57,18 @@ const NotebookIcon = ({ size = 24, color = '#000' }: { size: number; color: stri
   </Svg>
 );
 
+// Icono de plus (+)
+const PlusIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 5v14M5 12h14"
+      stroke={color}
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 // Icono de hashtag/número
 const PoundIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -221,6 +233,7 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
     'check': <CheckIcon {...iconProps} />,
     'close': <CloseIcon {...iconProps} />,
     'notebook': <NotebookIcon {...iconProps} />,
+    'plus': <PlusIcon {...iconProps} />,
     'menu': <MenuIcon {...iconProps} />,
     'logout': <LogoutIcon {...iconProps} />,
   };

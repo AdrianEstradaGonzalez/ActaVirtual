@@ -101,7 +101,7 @@ export default function DrawerMenu({ navigation, onClose }: DrawerMenuProps) {
                 label="Mis Designaciones"
                 onPress={() => {
                   onClose();
-                  // Ya estamos en Designaciones
+                  navigation.navigate('Designaciones');
                 }}
                 iconColor="#fdfdfdff"
               />

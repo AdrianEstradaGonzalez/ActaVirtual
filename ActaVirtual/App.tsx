@@ -6,22 +6,16 @@ import EntrenadorView from "./pages/EntrenadorView";
 import QRView from "./pages/QRView";
 import ArbitroPager from "./pages/ArbitroPager";
 import DesignacionesView from "./pages/DesignacionesView";
+import ActaVirtualView from "./pages/ActaVirtualView";
 import { CommunityProvider, useCommunity } from "./context/CommunityContext";
 import { CommunitySelector } from "./pages/CommunitySelector";
 import { CommunitySwitcher } from "./components/CommunitySwitcher";
 import { createAppStyles } from "./styles/AppStyles";
+import { RootStackParamList } from "./types/Navigation";
 import { useState, useEffect } from "react";
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 const { height: screenHeight } = Dimensions.get('window');
-
-type RootStackParamList = {
-  Home: undefined;
-  Entrenador: undefined;
-  Arbitro: undefined;
-  QRView: { data: string };
-  Designaciones: undefined;
-};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -364,6 +358,11 @@ function AppContent() {
           name="QRView"
           component={QRView}
           options={{ title: "Código QR" }}
+        />
+        <Stack.Screen
+          name="ActaVirtual"
+          component={ActaVirtualView}
+          options={{ title: "Acta Virtual" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -298,6 +298,28 @@ const AccountPlusIcon = ({ size = 24, color = '#000' }: { size: number; color: s
   </Svg>
 );
 
+// Icono de búsqueda sobre cuenta (persona + lupa)
+const AccountSearchIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Persona a la izquierda */}
+    <Circle cx="9" cy="8" r="3" stroke={color} strokeWidth={2} fill="none" />
+    <Path
+      d="M3 20c0-3.5 3-6 6-6s6 2.5 6 6"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+    />
+    {/* Lupa vertical a la derecha */}
+    <Circle cx="18.5" cy="10" r="3" stroke={color} strokeWidth={2} fill="none" />
+    <Path
+      d="M17 12.5l-2 2"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
 // Icono de cuenta sin acceso
 const AccountOffIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -483,6 +505,7 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
     'account-multiple': <AccountMultipleIcon {...iconProps} />,
     'account-plus': <AccountPlusIcon {...iconProps} />,
     'account-off': <AccountOffIcon {...iconProps} />,
+    'account-search': <AccountSearchIcon {...iconProps} />,
     'account-tie': <AccountTieIcon {...iconProps} />,
     'clipboard-account': <ClipboardAccountIcon {...iconProps} />,
     'clipboard-account-outline': <ClipboardAccountOutlineIcon {...iconProps} />,

@@ -294,6 +294,7 @@ export const modalStyles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 32,
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -313,6 +314,7 @@ export const modalStyles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 24,
     gap: 20,
+    maxHeight: 450,
   },
   inputGroup: {
     gap: 8,
@@ -413,6 +415,20 @@ export const modalStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#64748b',
+  },
+  categoriaChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  categoriaChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+    textAlign: 'center',
   },
 });
 

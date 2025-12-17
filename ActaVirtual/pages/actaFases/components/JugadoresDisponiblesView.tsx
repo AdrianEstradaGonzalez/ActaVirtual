@@ -79,7 +79,8 @@ export function JugadoresDisponiblesView({
                   ? dorsalSeleccionado[j.id]
                   : (j.dorsal || '');
                 const esLibero = !!liberoSeleccionado[j.id];
-                return { jugador: j, dorsal, esCapitan: false, esLibero };
+                const esCapitan = capitanId === j.id;
+                return { jugador: j, dorsal, esCapitan, esLibero };
               });
               onAddAll(items);
             }}
@@ -96,6 +97,10 @@ export function JugadoresDisponiblesView({
           ? dorsalSeleccionado[jugador.id]
           : (jugador.dorsal || '');
         const esLiberoActual = !!liberoSeleccionado[jugador.id];
+        
+        // Contar cuántos líberos están seleccionados
+        const liberosSeleccionadosCount = Object.values(liberoSeleccionado).filter(Boolean).length;
+        const puedeSeleccionarLibero = esLiberoActual || liberosSeleccionadosCount < 2;
         
         return (
           <Card key={jugador.id} style={styles.jugadorDisponibleCard} mode="elevated">
@@ -131,9 +136,15 @@ export function JugadoresDisponiblesView({
                 <TouchableOpacity
                   style={[
                     styles.jugadorCapitanButton,
-                    esLiberoActual && { backgroundColor: theme.secondary, borderColor: theme.secondary }
+                    esLiberoActual && { backgroundColor: theme.secondary, borderColor: theme.secondary },
+                    !puedeSeleccionarLibero && { opacity: 0.4 }
                   ]}
-                  onPress={() => setLiberoSeleccionado({ ...liberoSeleccionado, [jugador.id]: !esLiberoActual })}
+                  onPress={() => {
+                    if (puedeSeleccionarLibero) {
+                      setLiberoSeleccionado({ ...liberoSeleccionado, [jugador.id]: !esLiberoActual });
+                    }
+                  }}
+                  disabled={!puedeSeleccionarLibero}
                 >
                   <Text style={[
                     styles.capitanButtonText,

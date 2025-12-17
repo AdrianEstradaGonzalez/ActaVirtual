@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -11,7 +11,8 @@ import { Text } from 'react-native-paper';
 import { useCommunity } from '../../context/CommunityContext';
 import VectorIcon from '../../components/VectorIcon';
 import CustomAlert from '../../components/CustomAlert';
-import { Partido } from '../../types/MockData';
+import { Partido, Categoria } from '../../types/MockData';
+import * as MockData from '../../types/MockData';
 import { usePlantillaManager, Plantilla } from './hooks/usePlantillaManager';
 import { JugadoresDisponiblesView } from './components/JugadoresDisponiblesView';
 import { StaffDisponiblesView } from './components/StaffDisponiblesView';
@@ -46,9 +47,10 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
   } = usePlantillaManager();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [modalTab, setModalTab] = useState<'seleccionar' | 'nuevo'>('seleccionar');
+  const [modalTab, setModalTab] = useState<'seleccionar' | 'nuevo' | 'otros'>('seleccionar');
   const [tipoPersonal, setTipoPersonal] = useState<'jugador' | 'libero' | 'staff'>('jugador');
   const [rolStaff, setRolStaff] = useState<'entrenador' | 'delegado' | 'entrenadorAsistente'>('entrenador');
+  const [categoriaJugador, setCategoriaJugador] = useState<Categoria>('Senior');
   const [formData, setFormData] = useState({
     nombre: '',
     apellidos: '',
@@ -83,11 +85,12 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
     setTipoPersonal(tipo);
     setFormData({ nombre: '', apellidos: '', dni: '', dorsal: '' });
     setRolStaff('entrenador');
+    setCategoriaJugador('Senior');
     setModalTab('seleccionar');
     setShowAddModal(true);
   };
 
-  const getJugadoresDisponibles = () => {
+  const jugadoresDisponibles = useMemo(() => {
     const jugadores = activeTab === 'local'
       ? (partido.jugadoresDisponiblesLocal || [])
       : (partido.jugadoresDisponiblesVisitante || []);
@@ -96,9 +99,9 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
     const idsEnActa = [...plantillaActual.jugadores, ...plantillaActual.liberos].map(j => j.id);
 
     return jugadores.filter(j => !idsEnActa.includes(j.id));
-  };
+  }, [activeTab, partido, plantillaLocal, plantillaVisitante]);
 
-  const getStaffDisponibles = () => {
+  const staffDisponibles = useMemo(() => {
     const staff = activeTab === 'local'
       ? (partido.staffDisponibleLocal || [])
       : (partido.staffDisponibleVisitante || []);
@@ -107,7 +110,41 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
     const idsEnActa = plantillaActual.staff.map(s => s.id);
 
     return staff.filter(s => !idsEnActa.includes(s.id));
-  };
+  }, [activeTab, partido, plantillaLocal, plantillaVisitante]);
+
+  const otrosJugadores = useMemo(() => {
+    const plantillaActual = getPlanillaActual();
+    const idsEnActa = [...plantillaActual.jugadores, ...plantillaActual.liberos].map(j => j.id);
+
+    // Collect all player arrays from MockData (optimized)
+    const allPlayers: any[] = [
+      ...(MockData.JUGADORES_CV_TERUEL || []),
+      ...(MockData.LIBEROS_CV_TERUEL || []),
+      ...(MockData.JUGADORES_UNICAJA_ALMERIA || []),
+      ...(MockData.LIBEROS_UNICAJA_ALMERIA || []),
+      ...(MockData.JUGADORES_ARENAL_EMEVE || []),
+      ...(MockData.LIBEROS_ARENAL_EMEVE || []),
+      ...(MockData.JUGADORES_CV_PALMA || []),
+      ...(MockData.LIBEROS_CV_PALMA || []),
+    ];
+
+    // Deduplicate by id using Set for better performance
+    const seen = new Set<string>();
+    const uniquePlayers = allPlayers.filter(p => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    const disponibles = activeTab === 'local'
+      ? (partido.jugadoresDisponiblesLocal || [])
+      : (partido.jugadoresDisponiblesVisitante || []);
+    const idsDisponibles = new Set(disponibles.map(d => d.id));
+    const idsEnActaSet = new Set(idsEnActa);
+
+    // Filter out players already in the acta or already listed as disponibles for this match
+    return uniquePlayers.filter(p => !idsEnActaSet.has(p.id) && !idsDisponibles.has(p.id));
+  }, [activeTab, partido, plantillaLocal, plantillaVisitante]);
 
   const handleSelectJugador = (jugador: any, dorsal: string, esCapitan: boolean, esLibero: boolean) => {
     const jugadorConDorsal = { ...jugador, dorsal: dorsal || jugador.dorsal };
@@ -123,13 +160,28 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
     setShowAddModal(false);
   };
 
-  const handleAddAll = (items: { jugador: any; dorsal: string; esCapitan: boolean }[]) => {
+  const handleAddAll = (items: {
+    esLibero: any; jugador: any; dorsal: string; esCapitan: boolean 
+}[]) => {
+    const plantillaActual = getPlanillaActual();
+    const totalActual = plantillaActual.jugadores.length + plantillaActual.liberos.length;
+    const totalDespuesDeAñadir = totalActual + items.length;
+
+    // Validar límite de 14 jugadores
+    if (totalDespuesDeAñadir > 14) {
+      setAlertMessage(`No se pueden añadir ${items.length} jugador${items.length !== 1 ? 'es' : ''}. Ya tienes ${totalActual} y el máximo es 14.`);
+      setShowAlert(true);
+      return;
+    }
+
     const failures: string[] = [];
     let anySuccess = false;
 
     for (const it of items) {
       const jugadorConDorsal = { ...it.jugador, dorsal: it.dorsal };
-      const result = addJugador(jugadorConDorsal, tipoPersonal as 'jugador' | 'libero', it.esCapitan);
+      // Determinar el tipo basándose en si fue marcado como líbero en la selección
+      const tipo = it.esLibero ? 'libero' : 'jugador';
+      const result = addJugador(jugadorConDorsal, tipo, it.esCapitan);
       if (!result.success) {
         failures.push(`${it.jugador.apellidos}, ${it.jugador.nombre}: ${result.error}`);
       } else {
@@ -174,7 +226,8 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
         return;
       }
 
-      const result = addJugadorNuevo(formData, tipoPersonal);
+      const jugadorConCategoria = { ...formData, categoria: categoriaJugador };
+      const result = addJugadorNuevo(jugadorConCategoria, tipoPersonal);
       if (!result.success && result.error) {
         setAlertMessage(result.error);
         setShowAlert(true);
@@ -438,14 +491,14 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
                 >
                   <VectorIcon
                     name="account-multiple"
-                    size={20}
+                    size={22}
                     color={modalTab === 'seleccionar' ? theme.primary : '#64748b'}
                   />
                   <Text style={[
                     modalStyles.modalTabText,
                     modalTab === 'seleccionar' && [modalStyles.modalTabTextActive, { color: theme.primary }]
                   ]}>
-                    {tipoPersonal === 'staff' ? 'Seleccionar Técnico' : 'Seleccionar Jugador'}
+                    {tipoPersonal === 'staff' ? 'Técnicos' : 'Plantilla'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -457,22 +510,43 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
                 >
                   <VectorIcon
                     name="account-plus"
-                    size={20}
+                    size={22}
                     color={modalTab === 'nuevo' ? theme.primary : '#64748b'}
                   />
                   <Text style={[
                     modalStyles.modalTabText,
                     modalTab === 'nuevo' && [modalStyles.modalTabTextActive, { color: theme.primary }]
                   ]}>
-                    Añadir Nuevo
+                    Nuevo
                   </Text>
                 </TouchableOpacity>
+                {tipoPersonal !== 'staff' && (
+                  <TouchableOpacity
+                    style={[
+                      modalStyles.modalTab,
+                      modalTab === 'otros' && [modalStyles.modalTabActive, { borderBottomColor: theme.primary }]
+                    ]}
+                    onPress={() => setModalTab('otros')}
+                  >
+                    <VectorIcon
+                      name="account-search"
+                      size={22}
+                      color={modalTab === 'otros' ? theme.primary : '#64748b'}
+                    />
+                    <Text style={[
+                      modalStyles.modalTabText,
+                      modalTab === 'otros' && [modalStyles.modalTabTextActive, { color: theme.primary }]
+                    ]}>
+                      Otros
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
             {modalTab === 'seleccionar' && (tipoPersonal === 'jugador' || tipoPersonal === 'libero') ? (
               <JugadoresDisponiblesView
-                jugadores={getJugadoresDisponibles()}
+                jugadores={jugadoresDisponibles}
                 onSelect={handleSelectJugador}
                 onAddAll={handleAddAll}
                 theme={theme}
@@ -480,14 +554,26 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
               />
             ) : modalTab === 'seleccionar' && tipoPersonal === 'staff' ? (
               <StaffDisponiblesView
-                staff={getStaffDisponibles()}
+                staff={staffDisponibles}
                 onSelect={handleSelectStaff}
+                theme={theme}
+                sortByName={sortByName}
+              />
+            ) : modalTab === 'otros' ? (
+              <JugadoresDisponiblesView
+                jugadores={otrosJugadores}
+                onSelect={handleSelectJugador}
+                onAddAll={handleAddAll}
                 theme={theme}
                 sortByName={sortByName}
               />
             ) : (
               <>
-                <View style={modalStyles.modalBody}>
+                <ScrollView 
+                  style={modalStyles.modalBody}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 20, paddingBottom: 80 }}
+                >
                   {(tipoPersonal === 'jugador' || tipoPersonal === 'libero') && (
                     <View style={modalStyles.inputGroup}>
                       <Text style={modalStyles.inputLabel}>Número *</Text>
@@ -535,6 +621,46 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
                     />
                   </View>
 
+                  {(tipoPersonal === 'jugador' || tipoPersonal === 'libero') && (
+                    <View style={modalStyles.inputGroup}>
+                      <Text style={modalStyles.inputLabel}>Categoría *</Text>
+                      <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ gap: 8 }}
+                      >
+                        {(['miniBenjamin', 'Benjamin', 'Alevin', 'Infantil', 'Cadete', 'Juvenil', 'Junior', 'Senior', 'Master'] as Categoria[]).map((cat) => {
+                          const labels: { [key in Categoria]: string } = {
+                            miniBenjamin: 'Mini-Benj',
+                            Benjamin: 'Benjamín',
+                            Alevin: 'Alevín',
+                            Infantil: 'Infantil',
+                            Cadete: 'Cadete',
+                            Juvenil: 'Juvenil',
+                            Junior: 'Junior',
+                            Senior: 'Senior',
+                            Master: 'Master',
+                          };
+                          return (
+                            <TouchableOpacity
+                              key={cat}
+                              style={[
+                                modalStyles.categoriaChip,
+                                categoriaJugador === cat && { backgroundColor: theme.primary + '15', borderColor: theme.primary }
+                              ]}
+                              onPress={() => setCategoriaJugador(cat)}
+                            >
+                              <Text style={[
+                                modalStyles.categoriaChipText,
+                                categoriaJugador === cat && { color: theme.primary, fontWeight: '700' }
+                              ]}>{labels[cat]}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  )}
+
                   {tipoPersonal === 'staff' && (
                     <View style={modalStyles.inputGroup}>
                       <Text style={modalStyles.inputLabel}>Rol *</Text>
@@ -581,7 +707,7 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
                       </View>
                     </View>
                   )}
-                </View>
+                </ScrollView>
 
                 <View style={modalStyles.modalFooter}>
                   <TouchableOpacity

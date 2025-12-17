@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { Theme } from '../config/themes';
 import { CommunityAssets } from '../config/assets';
@@ -31,6 +33,8 @@ export default function CustomAlert({
   onAccept,
   showResetButton = true,
 }: CustomAlertProps) {
+  const MAX_MESSAGE_HEIGHT = Math.round(Dimensions.get('window').height * 0.5);
+  
   return (
     <Modal
       visible={visible}
@@ -57,10 +61,16 @@ export default function CustomAlert({
             </Text>
           </View>
 
-          {/* Mensaje */}
-          <Text style={styles.message}>
-            {message}
-          </Text>
+          {/* Mensaje (scrollable si es largo) */}
+          <ScrollView
+            style={{ maxHeight: MAX_MESSAGE_HEIGHT }}
+            contentContainerStyle={styles.messageContent}
+            showsVerticalScrollIndicator={true}
+          >
+            <Text style={styles.message}>
+              {message}
+            </Text>
+          </ScrollView>
 
           {/* Botones */}
           <View style={styles.buttonsContainer}>
@@ -160,10 +170,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 24,
+    color: '#374151',
+  },
+  messageContent: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 28,
-    color: '#374151',
   },
   buttonsContainer: {
     paddingHorizontal: 16,

@@ -35,7 +35,7 @@ export function StaffDisponiblesView({
   }
 
   const handleConfirmarSeleccion = (member: StaffMember) => {
-    const rol = rolSeleccionado[member.id] || 'entrenadorAsistente';
+    const rol = rolSeleccionado[member.id] || 'entrenador';
     onSelect(member, rol);
   };
 
@@ -65,7 +65,7 @@ export function StaffDisponiblesView({
       </View>
 
       {staffOrdenado.map((member) => {
-        const rolActual = rolSeleccionado[member.id] || 'entrenadorAsistente';
+        const rolActual = rolSeleccionado[member.id] || 'entrenador';
 
         const roleShort: { [key: string]: string } = {
           entrenador: '1E',

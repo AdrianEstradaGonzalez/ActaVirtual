@@ -1,8 +1,8 @@
 import React from "react";
 import { View, TouchableOpacity, Image, Text } from "react-native";
-import VectorIcon from "../components/VectorIcon";
+import VectorIcon from "../../components/VectorIcon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCommunity } from "../context/CommunityContext";
+import { useCommunity } from "../../context/CommunityContext";
 
 type NavBarBackProps = {
   onBack: () => void;

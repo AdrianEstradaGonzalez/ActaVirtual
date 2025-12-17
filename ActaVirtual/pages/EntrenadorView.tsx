@@ -17,7 +17,7 @@ import { useCommunity } from "../context/CommunityContext";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import type { RootStackParamList } from "../types/Navigation";
-import NavBar from "./NavBar";
+import NavBar from "./navBars/NavBar";
 
 type NavigationProp = StackNavigationProp<RootStackParamList, "Entrenador">;
 

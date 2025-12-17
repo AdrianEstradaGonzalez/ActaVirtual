@@ -8,8 +8,8 @@ import {
 } from "react-native";
 import { createArbitroStyles } from "../styles/ArbitroStyles";
 import { useCommunity } from "../context/CommunityContext";
-import SwipeIndicatorNav from "./SwipeIndicatorNav";
-import NavBar from "./NavBar";
+import SwipeIndicatorNav from "./navBars/SwipeIndicatorNav";
+import NavBar from "./navBars/NavBar";
 
 type Props = {
   modoProp?: "6x6" | "4x4";

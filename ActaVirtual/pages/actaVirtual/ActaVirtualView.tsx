@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, Modal, Animated, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useCommunity } from '../context/CommunityContext';
-import DrawerMenu from '../components/DrawerMenu';
-import NavBarBack from './NavBarBack';
-import PlantillasView from './PlantillasView';
-import { Partido } from '../types/MockData';
+import { useCommunity } from '../../context/CommunityContext';
+import DrawerMenu from '../../components/DrawerMenu';
+import NavBarBack from '../navBars/NavBarBack';
+import PlantillasView from '../actaFases/PlantillasView';
+import { Partido } from '../../types/MockData';
 
 type ActaVirtualProps = {
   navigation: any;

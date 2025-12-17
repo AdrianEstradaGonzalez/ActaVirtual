@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, Text, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { useCommunity } from "../context/CommunityContext";
-import CustomAlert from "../components/CustomAlert";
+import { useCommunity } from "../../context/CommunityContext";
+import CustomAlert from "../../components/CustomAlert";
 
 type NavBarProps = {
   modo: "6x6" | "4x4";
@@ -26,8 +26,8 @@ export default function NavBar({ modo, toggleModo, valoresEquipos, onClearRotati
   const [showAlert, setShowAlert] = useState(false);
 
   const icons = {
-    home: require("../assets/icons/home.png"),
-    swap: require("../assets/icons/swap.png"),
+    home: require("../../assets/icons/home.png"),
+    swap: require("../../assets/icons/swap.png"),
   };
 
   if (!theme || !assets) return null;

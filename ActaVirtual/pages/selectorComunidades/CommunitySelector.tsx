@@ -15,8 +15,8 @@ import {
   Dimensions,
   ImageBackground,
 } from 'react-native';
-import { useCommunity } from '../context/CommunityContext';
-import { CommunityId, THEMES } from '../config/themes';
+import { useCommunity } from '../../context/CommunityContext';
+import { CommunityId, THEMES } from '../../config/themes';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,7 +34,7 @@ export const CommunitySelector: React.FC<CommunitySelectorProps> = ({ onSelect }
 
   return (
     <ImageBackground
-      source={require('../assets/fondo.jpeg')}
+      source={require('../../assets/fondo.jpeg')}
       style={styles.background}
     >
       <View style={styles.overlay}>
@@ -55,7 +55,7 @@ export const CommunitySelector: React.FC<CommunitySelectorProps> = ({ onSelect }
             >
               <View style={styles.flagImageContainer}>
                 <Image
-                  source={require('../assets/asturias/Flag_of_Asturias.png')}
+                  source={require('../../assets/asturias/Flag_of_Asturias.png')}
                   style={styles.flagImage}
                   resizeMode="contain"
                 />
@@ -74,7 +74,7 @@ export const CommunitySelector: React.FC<CommunitySelectorProps> = ({ onSelect }
             >
               <View style={styles.flagImageContainer}>
                 <Image
-                  source={require('../assets/baleares/bandera.png')}
+                  source={require('../../assets/baleares/bandera.png')}
                   style={styles.flagImage}
                   resizeMode="contain"
                 />

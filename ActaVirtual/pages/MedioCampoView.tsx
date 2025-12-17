@@ -2,8 +2,8 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
 import { createMedioCampoStyles } from "../styles/MedioCampoStyles";
 import { useCommunity } from "../context/CommunityContext";
-import SwipeIndicatorNav from "./SwipeIndicatorNav";
-import NavBarBack from "./NavBarBack";
+import SwipeIndicatorNav from "./navBars/SwipeIndicatorNav";
+import NavBarBack from "./navBars/NavBarBack";
 
 // Icono local
 const icons = {

@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Modal, Animated, PanResponder, Dimensions } from 'react-native';
 import { Text, Card } from 'react-native-paper';
-import { useCommunity } from '../context/CommunityContext';
-import CustomAlert from '../components/CustomAlert';
-import DrawerMenu from '../components/DrawerMenu';
-import NavBarBack from './NavBarBack';
-import VectorIcon from '../components/VectorIcon';
+import { useCommunity } from '../../context/CommunityContext';
+import CustomAlert from '../../components/CustomAlert';
+import DrawerMenu from '../../components/DrawerMenu';
+import NavBarBack from '../navBars/NavBarBack';
+import VectorIcon from '../../components/VectorIcon';
 import { 
   Partido, 
   PARTIDOS_CONFIRMADOS, 
   PARTIDOS_PROPUESTOS 
-} from '../types/MockData';
+} from '../../types/MockData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

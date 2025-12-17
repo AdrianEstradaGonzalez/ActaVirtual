@@ -1,8 +1,8 @@
 import { View, Image } from "react-native";
-import { useCommunity } from "../context/CommunityContext";
+import { useCommunity } from "../../context/CommunityContext";
 
 const icons = {
-  home: require("../assets/icons/home.png"), // la casita que ya usas
+  home: require("../../assets/icons/home.png"), // la casita que ya usas
 };
 
 type Props = {

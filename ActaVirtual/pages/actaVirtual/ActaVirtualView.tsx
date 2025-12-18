@@ -8,6 +8,7 @@ import NavBarBack from '../navBars/NavBarBack';
 import PlantillasView from '../actaFases/PlantillasView';
 import SorteoView from '../actaFases/SorteoView';
 import FirmasView from '../actaFases/FirmasView';
+import PartidoView from '../actaFases/PartidoView';
 import { Partido } from '../../types/MockData';
 import { styles } from './styles/ActaVirtualStyles';
 
@@ -62,8 +63,22 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
         return <FirmasView partido={partido} />;
       case 'partido':
         return (
-          <View style={styles.faseContainer}>
-            <Text style={styles.faseText}>Fase de Partido (Próximamente)</Text>
+          <View style={[styles.faseContainer, styles.faseContainerCompact]}>
+            <PartidoView
+              categoria={partido.categoria}
+              equipoSacaInicial={"A"}
+              jugadoresEquipoA={partido.jugadoresDisponiblesLocal}
+              jugadoresEquipoB={partido.jugadoresDisponiblesVisitante}
+              nombreEquipoA={partido.equipoLocal}
+              nombreEquipoB={partido.equipoVisitante}
+              codigoEquipoA={(partido.equipoLocal || '').substring(0,3).toUpperCase()}
+              codigoEquipoB={(partido.equipoVisitante || '').substring(0,3).toUpperCase()}
+              capitanEquipoA={undefined}
+              capitanEquipoB={undefined}
+              onEscanear={(eq) => {
+                // placeholder: abrir flujo de escaneo si está implementado
+              }}
+            />
           </View>
         );
       case 'finalizacion':
@@ -101,71 +116,73 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
 
       {/* Header con gradiente */}
       <View style={styles.headerContainer}>
-        <View style={[styles.headerGradient, { backgroundColor: theme.primary }]}>
-          <View style={styles.headerContent}>
-              <View style={styles.titleContainer}>
-                <Text style={styles.title}>Acta Virtual</Text>
-                <TouchableOpacity
-                  style={styles.obsButton}
-                  onPress={() => setObservModalVisible(true)}
-                >
-                  <VectorIcon name="note-outline" size={16} color="#ffffff" />
-                  <Text style={[styles.obsButtonText, { marginLeft: 8 }]}>Observaciones</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={styles.matchCard}
-                onPress={() => setHeaderExpanded(prev => !prev)}
-              >
-                <View style={styles.matchRow}>
-                  <View style={styles.teamContainer}>
-                    <Text style={styles.teamName}>{partido.equipoLocal}</Text>
-                  </View>
-                  <View style={styles.vsContainer}>
-                    <Text style={styles.vsText}>VS</Text>
-                  </View>
-                  <View style={styles.teamContainer}>
-                    <Text style={styles.teamName}>{partido.equipoVisitante}</Text>
-                  </View>
+        <View style={[faseActual === 'partido' ? styles.headerGradientCompact : styles.headerGradient, { backgroundColor: theme.primary }]}>
+          <View style={faseActual === 'partido' ? styles.headerContentCompact : styles.headerContent}>
+            {faseActual !== 'partido' && (
+              <>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.title}>Acta Virtual</Text>
+                  <TouchableOpacity
+                    style={styles.obsButton}
+                    onPress={() => setObservModalVisible(true)}
+                  >
+                    <VectorIcon name="note-outline" size={16} color="#ffffff" />
+                    <Text style={[styles.obsButtonText, { marginLeft: 8 }]}>Observaciones</Text>
+                  </TouchableOpacity>
                 </View>
-
-                {headerExpanded && (
-                  <View style={styles.matchDetails}>
-                    <View style={styles.matchDetailRow}>
-                      <VectorIcon name="shield-star" size={14} color="#475569" />
-                      <Text style={styles.matchDetailText}>{partido.categoria}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={styles.matchCard}
+                  onPress={() => setHeaderExpanded(prev => !prev)}
+                >
+                  <View style={styles.matchRow}>
+                    <View style={styles.teamContainer}>
+                      <Text style={styles.teamName}>{partido.equipoLocal}</Text>
                     </View>
-                    <View style={styles.matchDetailRow}>
-                      <VectorIcon name="pound" size={14} color="#475569" />
-                      <Text style={styles.matchDetailText}>{partido.competicion}</Text>
+                    <View style={styles.vsContainer}>
+                      <Text style={styles.vsText}>VS</Text>
                     </View>
-                    <View style={styles.matchDetailRow}>
-                      <VectorIcon name="calendar-blank" size={14} color="#475569" />
-                      <Text style={styles.matchDetailText}>{partido.fecha}</Text>
-                    </View>
-                    <View style={styles.matchDetailRow}>
-                      <VectorIcon name="clock-time-four-outline" size={14} color="#475569" />
-                      <Text style={styles.matchDetailText}>{partido.hora}</Text>
+                    <View style={styles.teamContainer}>
+                      <Text style={styles.teamName}>{partido.equipoVisitante}</Text>
                     </View>
                   </View>
-                )}
 
-                <TouchableOpacity
-                  style={styles.matchToggleContainer}
-                  onPress={() => setHeaderExpanded(prev => !prev)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.matchToggleText}>{headerExpanded ? 'Mostrar menos' : 'Mostrar más'}</Text>
-                  <VectorIcon name={headerExpanded ? 'chevron-up' : 'chevron-down'} size={20} color="#334155" />
+                  {headerExpanded && (
+                    <View style={styles.matchDetails}>
+                      <View style={styles.matchDetailRow}>
+                        <VectorIcon name="shield-star" size={14} color="#475569" />
+                        <Text style={styles.matchDetailText}>{partido.categoria}</Text>
+                      </View>
+                      <View style={styles.matchDetailRow}>
+                        <VectorIcon name="pound" size={14} color="#475569" />
+                        <Text style={styles.matchDetailText}>{partido.competicion}</Text>
+                      </View>
+                      <View style={styles.matchDetailRow}>
+                        <VectorIcon name="calendar-blank" size={14} color="#475569" />
+                        <Text style={styles.matchDetailText}>{partido.fecha}</Text>
+                      </View>
+                      <View style={styles.matchDetailRow}>
+                        <VectorIcon name="clock-time-four-outline" size={14} color="#475569" />
+                        <Text style={styles.matchDetailText}>{partido.hora}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.matchToggleContainer}
+                    onPress={() => setHeaderExpanded(prev => !prev)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.matchToggleText}>{headerExpanded ? 'Mostrar menos' : 'Mostrar más'}</Text>
+                    <VectorIcon name={headerExpanded ? 'chevron-up' : 'chevron-down'} size={20} color="#334155" />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </>
+            )}
           </View>
-        </View>
-      </View>
 
-      {/* Indicador de fases mejorado */}
-      <View style={styles.fasesWrapper}>
+          {/* Indicador de fases - dentro del header azul */}
+          <View style={[styles.fasesWrapper, faseActual === 'partido' && { marginTop: 8, padding: 8, marginHorizontal: 12, borderRadius: 12 }] }>
         <View style={styles.fasesIndicator}>
           <TouchableOpacity
             style={styles.faseStep}
@@ -332,11 +349,13 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Contenido de la fase actual */}
-      <View style={styles.content}>
-        {renderFaseActual()}
+        </View>
       </View>
+
+      {/* Contenido de la fase actual (pantalla scrolleable) */}
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 20 }}>
+        {renderFaseActual()}
+      </ScrollView>
 
       {/* Observaciones Modal (accesible desde cualquier fase) */}
       <Modal

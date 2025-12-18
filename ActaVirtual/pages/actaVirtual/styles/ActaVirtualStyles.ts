@@ -21,6 +21,22 @@ export const styles = StyleSheet.create({
   headerContent: {
     paddingHorizontal: 20,
   },
+  /* Compact header used during partido phase to free vertical space */
+  headerGradientCompact: {
+    paddingTop: 6,
+    paddingBottom: 8,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  headerContentCompact: {
+    paddingHorizontal: 12,
+  },
+  titleCompact: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#ffffff',
+    letterSpacing: 0.3,
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -257,6 +273,15 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
+  },
+  /* Compact variant used for partido phase to reduce vertical gap */
+  faseContainerCompact: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 8,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
   },
   faseText: {
     fontSize: 20,

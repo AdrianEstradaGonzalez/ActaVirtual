@@ -478,6 +478,19 @@ const AlertCircleIcon = ({ size = 24, color = '#000' }: { size: number; color: s
   </Svg>
 );
 
+// Icono de pelota de voleibol
+const VolleyballIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.8} fill="none" />
+    <Path
+      d="M12 3c-2.5 0-4.8 1-6.5 2.6M12 3c2.5 0 4.8 1 6.5 2.6M5.5 5.6C3.9 7.3 3 9.6 3 12M5.5 5.6L12 12M18.5 5.6C20.1 7.3 21 9.6 21 12M18.5 5.6L12 12M3 12c0 2.4.9 4.7 2.5 6.4M21 12c0 2.4-.9 4.7-2.5 6.4M5.5 18.4L12 12M18.5 18.4L12 12"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
 // Icono de logout (cerrar sesión)
 const LogoutIcon = ({ size = 24, color = '#085201ff' }: { size: number; color: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -529,6 +542,7 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
     'shield-account': <ShieldAccountIcon {...iconProps} />,
     'arrow-right': <ArrowRightIcon {...iconProps} />,
     'alert-circle': <AlertCircleIcon {...iconProps} />,
+    'volleyball': <VolleyballIcon {...iconProps} />,
   };
 
   return icons[name] || null;

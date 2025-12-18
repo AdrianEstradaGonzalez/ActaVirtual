@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Jugador, StaffMember } from '../../../types/MockData';
+import { useState, useEffect } from 'react';
+import { Jugador, StaffMember, Partido } from '../../../types/MockData';
 
 export type Plantilla = {
   jugadores: Jugador[];
@@ -7,18 +7,47 @@ export type Plantilla = {
   staff: StaffMember[];
 };
 
-export function usePlantillaManager() {
-  const [plantillaLocal, setPlantillaLocal] = useState<Plantilla>({
-    jugadores: [],
-    liberos: [],
-    staff: [],
-  });
-  const [plantillaVisitante, setPlantillaVisitante] = useState<Plantilla>({
-    jugadores: [],
-    liberos: [],
-    staff: [],
-  });
+export function usePlantillaManager(
+  partido: Partido,
+  onUpdatePartido: (partido: Partido) => void
+) {
+  // Inicializar desde el partido si ya tiene datos (caché)
+  const inicializarPlantilla = (jugadores?: Jugador[], staff?: StaffMember[]): Plantilla => {
+    if (!jugadores || jugadores.length === 0) {
+      return { jugadores: [], liberos: [], staff: staff || [] };
+    }
+    
+    const jugadoresRegulares = jugadores.filter(j => !j.categoria || j.categoria !== 'Libero');
+    const liberos = jugadores.filter(j => j.categoria === 'Libero');
+    
+    return {
+      jugadores: jugadoresRegulares,
+      liberos: liberos,
+      staff: staff || [],
+    };
+  };
+
+  const [plantillaLocal, setPlantillaLocal] = useState<Plantilla>(
+    inicializarPlantilla(partido.jugadoresDisponiblesLocal, partido.staffDisponibleLocal)
+  );
+  const [plantillaVisitante, setPlantillaVisitante] = useState<Plantilla>(
+    inicializarPlantilla(partido.jugadoresDisponiblesVisitante, partido.staffDisponibleVisitante)
+  );
   const [activeTab, setActiveTab] = useState<'local' | 'visitante'>('local');
+
+  // Sincronizar plantillas con el objeto partido cuando cambian
+  useEffect(() => {
+    const jugadoresLocales = [...plantillaLocal.jugadores, ...plantillaLocal.liberos];
+    const jugadoresVisitantes = [...plantillaVisitante.jugadores, ...plantillaVisitante.liberos];
+    
+    onUpdatePartido({
+      ...partido,
+      jugadoresDisponiblesLocal: jugadoresLocales,
+      jugadoresDisponiblesVisitante: jugadoresVisitantes,
+      staffDisponibleLocal: plantillaLocal.staff,
+      staffDisponibleVisitante: plantillaVisitante.staff,
+    });
+  }, [plantillaLocal, plantillaVisitante]);
 
   const getPlanillaActual = () => {
     return activeTab === 'local' ? plantillaLocal : plantillaVisitante;

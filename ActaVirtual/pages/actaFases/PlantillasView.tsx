@@ -26,10 +26,10 @@ import {
 
 type PlantillasViewProps = {
   partido: Partido;
-  onContinuar: () => void;
+  onUpdatePartido: (partido: Partido) => void;
 };
 
-export default function PlantillasView({ partido, onContinuar }: PlantillasViewProps) {
+export default function PlantillasView({ partido, onUpdatePartido }: PlantillasViewProps) {
   const { theme, assets } = useCommunity();
   const {
     plantillaLocal,
@@ -44,11 +44,11 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
     toggleCapitan,
     removePersonal,
     canContinue,
-  } = usePlantillaManager();
+  } = usePlantillaManager(partido, onUpdatePartido);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalTab, setModalTab] = useState<'seleccionar' | 'nuevo' | 'otros'>('seleccionar');
-  const [tipoPersonal, setTipoPersonal] = useState<'jugador' | 'libero' | 'staff'>('jugador');
+  const [tipoPersonal, setTipoPersonal] = useState<'jugador' | 'staff'>('jugador');
   const [rolStaff, setRolStaff] = useState<'entrenador' | 'delegado' | 'entrenadorAsistente'>('entrenador');
   const [categoriaJugador, setCategoriaJugador] = useState<Categoria>('Senior');
   const [formData, setFormData] = useState({
@@ -91,59 +91,77 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
   };
 
   const jugadoresDisponibles = useMemo(() => {
-    const jugadores = activeTab === 'local'
-      ? (partido.jugadoresDisponiblesLocal || [])
-      : (partido.jugadoresDisponiblesVisitante || []);
-
     const plantillaActual = getPlanillaActual();
-    const idsEnActa = [...plantillaActual.jugadores, ...plantillaActual.liberos].map(j => j.id);
+    const idsEnActa = plantillaActual.jugadores.map(j => j.id);
 
-    return jugadores.filter(j => !idsEnActa.includes(j.id));
+    // Obtener todos los jugadores del equipo según el tab activo
+    const todosJugadores = activeTab === 'local'
+      ? (MockData.JUGADORES_CV_TERUEL || [])
+      : (MockData.JUGADORES_UNICAJA_ALMERIA || []);
+
+    // Filtrar por categoría del partido y excluir los ya añadidos
+    const filtrados = todosJugadores.filter(j => 
+      !idsEnActa.includes(j.id) && 
+      j.categoria === partido.categoria
+    );
+
+    // Ordenar por apellidos y nombre
+    return sortByName(filtrados);
   }, [activeTab, partido, plantillaLocal, plantillaVisitante]);
 
   const staffDisponibles = useMemo(() => {
-    const staff = activeTab === 'local'
-      ? (partido.staffDisponibleLocal || [])
-      : (partido.staffDisponibleVisitante || []);
-
     const plantillaActual = getPlanillaActual();
     const idsEnActa = plantillaActual.staff.map(s => s.id);
 
-    return staff.filter(s => !idsEnActa.includes(s.id));
+    // Obtener todo el staff del equipo según el tab activo
+    const todoStaff = activeTab === 'local'
+      ? (MockData.STAFF_CV_TERUEL || [])
+      : (MockData.STAFF_UNICAJA_ALMERIA || []);
+
+    return todoStaff.filter(s => !idsEnActa.includes(s.id));
   }, [activeTab, partido, plantillaLocal, plantillaVisitante]);
 
   const otrosJugadores = useMemo(() => {
     const plantillaActual = getPlanillaActual();
-    const idsEnActa = [...plantillaActual.jugadores, ...plantillaActual.liberos].map(j => j.id);
+    const idsEnActa = plantillaActual.jugadores.map(j => j.id);
 
-    // Collect all player arrays from MockData (optimized)
-    const allPlayers: any[] = [
-      ...(MockData.JUGADORES_CV_TERUEL || []),
-      ...(MockData.LIBEROS_CV_TERUEL || []),
-      ...(MockData.JUGADORES_UNICAJA_ALMERIA || []),
-      ...(MockData.LIBEROS_UNICAJA_ALMERIA || []),
-      ...(MockData.JUGADORES_ARENAL_EMEVE || []),
-      ...(MockData.LIBEROS_ARENAL_EMEVE || []),
-      ...(MockData.JUGADORES_CV_PALMA || []),
-      ...(MockData.LIBEROS_CV_PALMA || []),
-    ];
+    // Obtener todos los jugadores del equipo según el tab activo
+    const todosJugadores = activeTab === 'local'
+      ? (MockData.JUGADORES_CV_TERUEL || [])
+      : (MockData.JUGADORES_UNICAJA_ALMERIA || []);
 
-    // Deduplicate by id using Set for better performance
-    const seen = new Set<string>();
-    const uniquePlayers = allPlayers.filter(p => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
+    // Orden de categorías (de menor a mayor)
+    const ordenCategorias: Categoria[] = ['miniBenjamin', 'Benjamin', 'Alevin', 'Infantil', 'Cadete', 'Juvenil', 'Junior', 'Senior', 'Master'];
+
+    // Helper para comparar categorías (retorna true si cat1 < cat2)
+    const categoriaInferior = (cat1?: Categoria, cat2?: Categoria): boolean => {
+      if (!cat1 || !cat2) return false;
+      const idx1 = ordenCategorias.indexOf(cat1);
+      const idx2 = ordenCategorias.indexOf(cat2);
+      return idx1 !== -1 && idx2 !== -1 && idx1 < idx2;
+    };
+
+    // Filtrar: categoría inferior al partido y no añadidos
+    const filtrados = todosJugadores.filter(j => 
+      !idsEnActa.includes(j.id) && 
+      categoriaInferior(j.categoria, partido.categoria)
+    );
+
+    // Ordenar por categoría (descendente = más cercana primero) y luego por apellidos/nombre
+    return filtrados.sort((a, b) => {
+      const catA = a.categoria ? ordenCategorias.indexOf(a.categoria) : -1;
+      const catB = b.categoria ? ordenCategorias.indexOf(b.categoria) : -1;
+      
+      // Ordenar por categoría descendente (más alta primero)
+      if (catA !== catB) {
+        return catB - catA;
+      }
+      
+      // Si misma categoría, ordenar por apellidos y nombre
+      const apellidosComp = a.apellidos.localeCompare(b.apellidos, 'es', { sensitivity: 'base' });
+      if (apellidosComp !== 0) return apellidosComp;
+      return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
     });
-
-    const disponibles = activeTab === 'local'
-      ? (partido.jugadoresDisponiblesLocal || [])
-      : (partido.jugadoresDisponiblesVisitante || []);
-    const idsDisponibles = new Set(disponibles.map(d => d.id));
-    const idsEnActaSet = new Set(idsEnActa);
-
-    // Filter out players already in the acta or already listed as disponibles for this match
-    return uniquePlayers.filter(p => !idsEnActaSet.has(p.id) && !idsDisponibles.has(p.id));
   }, [activeTab, partido, plantillaLocal, plantillaVisitante]);
 
   const handleSelectJugador = (jugador: any, dorsal: string, esCapitan: boolean, esLibero: boolean) => {
@@ -219,7 +237,7 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
       return;
     }
 
-    if (tipoPersonal === 'jugador' || tipoPersonal === 'libero') {
+    if (tipoPersonal === 'jugador') {
       if (!formData.dorsal) {
         setAlertMessage('El número de dorsal es obligatorio');
         setShowAlert(true);
@@ -445,23 +463,6 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
             {renderTeamContent(plantillaVisitante)}
           </View>
         </Animated.ScrollView>
-
-        {/* Botón Continuar */}
-        <View style={plantillasStyles.bottomButtonContainer}>
-          <TouchableOpacity
-            style={[
-              plantillasStyles.continueButton,
-              {
-                backgroundColor: canContinue() ? theme.primary : '#cbd5e1',
-              },
-            ]}
-            onPress={onContinuar}
-            disabled={!canContinue()}
-          >
-            <Text style={plantillasStyles.continueButtonText}>Continuar al Sorteo</Text>
-            <VectorIcon name="arrow-right" size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Modal para añadir personal */}
@@ -480,7 +481,7 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
               </TouchableOpacity>
             </View>
 
-            {(tipoPersonal === 'jugador' || tipoPersonal === 'libero' || tipoPersonal === 'staff') && (
+            {(tipoPersonal === 'jugador'  || tipoPersonal === 'staff') && (
               <View style={modalStyles.modalTabs}>
                 <TouchableOpacity
                   style={[
@@ -544,7 +545,7 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
               </View>
             )}
 
-            {modalTab === 'seleccionar' && (tipoPersonal === 'jugador' || tipoPersonal === 'libero') ? (
+            {modalTab === 'seleccionar' && (tipoPersonal === 'jugador') ? (
               <JugadoresDisponiblesView
                 jugadores={jugadoresDisponibles}
                 onSelect={handleSelectJugador}
@@ -574,7 +575,7 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ gap: 20, paddingBottom: 80 }}
                 >
-                  {(tipoPersonal === 'jugador' || tipoPersonal === 'libero') && (
+                  {(tipoPersonal === 'jugador' ) && (
                     <View style={modalStyles.inputGroup}>
                       <Text style={modalStyles.inputLabel}>Número *</Text>
                       <TextInput
@@ -621,7 +622,7 @@ export default function PlantillasView({ partido, onContinuar }: PlantillasViewP
                     />
                   </View>
 
-                  {(tipoPersonal === 'jugador' || tipoPersonal === 'libero') && (
+                  {(tipoPersonal === 'jugador' ) && (
                     <View style={modalStyles.inputGroup}>
                       <Text style={modalStyles.inputLabel}>Categoría *</Text>
                       <ScrollView 

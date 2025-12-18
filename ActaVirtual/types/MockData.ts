@@ -4,12 +4,14 @@ export type Partido = {
   fecha: string;
   hora: string;
   lugar: string;
-  categoria: string;
+  competicion: string;
+  categoria: Categoria;
   equipoLocal: string;
   equipoVisitante: string;
   arbitro1: string;
   arbitro2: string;
   arbitro3: string;
+  observaciones?: string;
   jugadoresDisponiblesLocal?: Jugador[];
   jugadoresDisponiblesVisitante?: Jugador[];
   staffDisponibleLocal?: StaffMember[];
@@ -50,9 +52,6 @@ export const JUGADORES_CV_TERUEL: Jugador[] = [
   { id: '6', nombre: 'Miguel', apellidos: 'Sáez Llorente', dni: '67890123F', dorsal: '11', categoria: 'Senior' },
   { id: '7', nombre: 'Daniel', apellidos: 'Gómez Pascual', dni: '78901234G', dorsal: '13', categoria: 'Juvenil' },
   { id: '8', nombre: 'Carlos', apellidos: 'Vicente López', dni: '89012345H', dorsal: '14', categoria: 'Senior' },
-];
-
-export const LIBEROS_CV_TERUEL: Jugador[] = [
   { id: '9', nombre: 'Sergio', apellidos: 'Martín Ramírez', dni: '90123456I', dorsal: '3', categoria: 'Senior' },
   { id: '10', nombre: 'Raúl', apellidos: 'Díaz Fernández', dni: '01234567J', dorsal: '6', categoria: 'Juvenil' },
 ];
@@ -73,9 +72,6 @@ export const JUGADORES_UNICAJA_ALMERIA: Jugador[] = [
   { id: '15', nombre: 'Alejandro', apellidos: 'Vigil Cardona', dni: '99012345S', dorsal: '15', categoria: 'Juvenil' },
   { id: '16', nombre: 'Fernando', apellidos: 'López García', dni: '10123456T', dorsal: '17', categoria: 'Senior' },
   { id: '17', nombre: 'David', apellidos: 'Martínez Soto', dni: '21234567U', dorsal: '18', categoria: 'Senior' },
-];
-
-export const LIBEROS_UNICAJA_ALMERIA: Jugador[] = [
   { id: '18', nombre: 'Antonio', apellidos: 'Sánchez Morales', dni: '32345678V', dorsal: '16', categoria: 'Senior' },
   { id: '19', nombre: 'Manuel', apellidos: 'Rodríguez Pérez', dni: '43456789W', dorsal: '19', categoria: 'Juvenil' },
 ];
@@ -95,9 +91,6 @@ export const JUGADORES_ARENAL_EMEVE: Jugador[] = [
   { id: '23', nombre: 'Marc', apellidos: 'Oliver Ferrer', dni: '21234567E', dorsal: '7', categoria: 'Cadete' },
   { id: '24', nombre: 'Pol', apellidos: 'Bestard Coll', dni: '32345678F', dorsal: '9', categoria: 'Cadete' },
   { id: '25', nombre: 'Guillem', apellidos: 'Carbonell Serra', dni: '43456789G', dorsal: '11', categoria: 'Juvenil' },
-];
-
-export const LIBEROS_ARENAL_EMEVE: Jugador[] = [
   { id: '26', nombre: 'Joan', apellidos: 'Adrover Martorell', dni: '54567890H', dorsal: '4', categoria: 'Cadete' },
 ];
 
@@ -115,9 +108,6 @@ export const JUGADORES_CV_PALMA: Jugador[] = [
   { id: '31', nombre: 'Lucía', apellidos: 'Rodríguez Pérez', dni: '21234567O', dorsal: '10', categoria: 'Senior' },
   { id: '32', nombre: 'Sara', apellidos: 'López Martín', dni: '32345678P', dorsal: '12', categoria: 'Senior' },
   { id: '33', nombre: 'Elena', apellidos: 'González Vega', dni: '43456789Q', dorsal: '14', categoria: 'Junior' },
-];
-
-export const LIBEROS_CV_PALMA: Jugador[] = [
   { id: '34', nombre: 'Sofía', apellidos: 'Morales Sánchez', dni: '54567890R', dorsal: '5', categoria: 'Senior' },
   { id: '35', nombre: 'Carmen', apellidos: 'Jiménez García', dni: '65678901S', dorsal: '7', categoria: 'Juvenil' },
 ];
@@ -140,16 +130,17 @@ export const PARTIDOS_CONFIRMADOS: Partido[] = [
     fecha: '15/12/2025',
     hora: '18:00',
     lugar: 'Polideportivo Municipal Sant Jordi',
-    categoria: 'Superliga Masculina',
+    competicion: 'Superliga Masculina',
+    categoria: 'Senior',
     equipoLocal: 'CV Teruel',
     equipoVisitante: 'Unicaja Almería',
     arbitro1: 'Juan Pérez García',
     arbitro2: 'María García López',
     arbitro3: 'Carlos López Martínez',
-    jugadoresDisponiblesLocal: [...JUGADORES_CV_TERUEL, ...LIBEROS_CV_TERUEL],
-    jugadoresDisponiblesVisitante: [...JUGADORES_UNICAJA_ALMERIA, ...LIBEROS_UNICAJA_ALMERIA],
-    staffDisponibleLocal: STAFF_CV_TERUEL,
-    staffDisponibleVisitante: STAFF_UNICAJA_ALMERIA,
+    jugadoresDisponiblesLocal: [],
+    jugadoresDisponiblesVisitante: [],
+    staffDisponibleLocal: [],
+    staffDisponibleVisitante: [],
   },
   {
     id: '2',
@@ -157,15 +148,16 @@ export const PARTIDOS_CONFIRMADOS: Partido[] = [
     fecha: '16/12/2025',
     hora: '20:30',
     lugar: 'Pabellón de Son Moix',
-    categoria: 'Superliga 2 Masculina',
+    competicion: 'Superliga 2 Masculina',
+    categoria: 'Cadete',
     equipoLocal: 'Arenal Emevé',
     equipoVisitante: 'Río Duero Soria',
     arbitro1: 'Juan Pérez García',
     arbitro2: 'Ana Martínez Ruiz',
     arbitro3: 'Luis Fernández Díaz',
-    jugadoresDisponiblesLocal: [...JUGADORES_ARENAL_EMEVE, ...LIBEROS_ARENAL_EMEVE],
+    jugadoresDisponiblesLocal: [],
     jugadoresDisponiblesVisitante: [],
-    staffDisponibleLocal: STAFF_ARENAL_EMEVE,
+    staffDisponibleLocal: [],
     staffDisponibleVisitante: [],
   },
 ];
@@ -177,15 +169,16 @@ export const PARTIDOS_PROPUESTOS: Partido[] = [
     fecha: '18/12/2025',
     hora: '19:00',
     lugar: 'Centro Deportivo Es Fortí',
-    categoria: 'Superliga Femenina',
+    competicion: 'Superliga Femenina',
+    categoria: 'Senior',
     equipoLocal: 'CV Palma',
     equipoVisitante: 'Feel Volley Alcobendas',
     arbitro1: 'Juan Pérez García',
     arbitro2: 'Pedro Sánchez Ruiz',
     arbitro3: 'Laura Ruiz González',
-    jugadoresDisponiblesLocal: [...JUGADORES_CV_PALMA, ...LIBEROS_CV_PALMA],
+    jugadoresDisponiblesLocal: [],
     jugadoresDisponiblesVisitante: [],
-    staffDisponibleLocal: STAFF_CV_PALMA,
+    staffDisponibleLocal: [],
     staffDisponibleVisitante: [],
   },
   {
@@ -194,11 +187,16 @@ export const PARTIDOS_PROPUESTOS: Partido[] = [
     fecha: '20/12/2025',
     hora: '17:30',
     lugar: 'Polideportivo Can Capó',
-    categoria: 'Primera División Masculina',
+    competicion: 'Primera División Masculina',
+    categoria: 'Juvenil',
     equipoLocal: 'Manacor Artesania',
     equipoVisitante: 'CV Ibiza',
     arbitro1: 'Juan Pérez García',
     arbitro2: 'Carmen Díaz Torres',
     arbitro3: 'Roberto Jiménez Vega',
+    jugadoresDisponiblesLocal: [],
+    jugadoresDisponiblesVisitante: [],
+    staffDisponibleLocal: [],
+    staffDisponibleVisitante: [],
   },
 ];

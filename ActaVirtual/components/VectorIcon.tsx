@@ -32,6 +32,20 @@ const ClockIcon = ({ size = 24, color = '#000' }: { size: number; color: string 
   </Svg>
 );
 
+// Icono combinado calendario + reloj (calendar-clock)
+const CalendarClockIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Calendar base */}
+    <Path
+      d="M19 4h-1V2h-2v2H8V2H6v2H5C3.89 4 3.01 4.9 3.01 6L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"
+      fill={color}
+    />
+    {/* Small clock overlay in top-right */}
+    <Circle cx="17" cy="7" r="3" stroke="#ffffff" strokeWidth={1.6} fill="none" />
+    <Path d="M17 6.2v1.2l0.9 0.7" stroke="#ffffff" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
 // Icono de ubicación/mapa
 const MapMarkerIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -483,6 +497,7 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
   const icons: { [key: string]: JSX.Element } = {
     'calendar-blank': <CalendarIcon {...iconProps} />,
     'clock-time-four-outline': <ClockIcon {...iconProps} />,
+    'calendar-clock': <CalendarClockIcon {...iconProps} />,
     'map-marker': <MapMarkerIcon {...iconProps} />,
     'pound': <PoundIcon {...iconProps} />,
     'shield-star': <ShieldStarIcon {...iconProps} />,
@@ -494,6 +509,7 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
     'check': <CheckIcon {...iconProps} />,
     'close': <CloseIcon {...iconProps} />,
     'notebook': <NotebookIcon {...iconProps} />,
+    'note-outline': <NotebookIcon {...iconProps} />,
     'plus': <PlusIcon {...iconProps} />,
     'menu': <MenuIcon {...iconProps} />,
     'logout': <LogoutIcon {...iconProps} />,

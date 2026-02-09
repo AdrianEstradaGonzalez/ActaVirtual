@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper';
 import { useCommunity } from '../../context/CommunityContext';
 import { Partido } from '../../types/MockData';
 import { styles } from './styles/SorteoStyles';
+import VectorIcon from '../../components/VectorIcon';
 
 const swapIcon = require('../../assets/icons/swap.png');
 
@@ -142,7 +143,10 @@ export default function SorteoView({ partido }: SorteoViewProps) {
       {/* Resumen */}
       {equipoQueSaca && (
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>✓ Configuración Completa</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <VectorIcon name="check" size={16} color="#065f46" />
+            <Text style={styles.summaryTitle}>Configuración Completa</Text>
+          </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Saque inicial:</Text>
             <Text style={styles.summaryValue}>

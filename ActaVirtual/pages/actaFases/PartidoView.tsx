@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Image,
   ScrollView,
   Modal,
+  Animated,
 } from "react-native";
 import { Camera, CameraType } from "react-native-camera-kit";
 import { createPartidoStyles } from "./styles/PartidoStyles";
@@ -13,6 +14,19 @@ import { useCommunity } from "../../context/CommunityContext";
 import VectorIcon from "../../components/VectorIcon";
 import CustomAlert from "../../components/CustomAlert";
 import { Jugador, Categoria, StaffMember } from "../../types/MockData";
+
+type MatchDataExport = {
+  setsGanadosA: number;
+  setsGanadosB: number;
+  marcadorSets: { puntosA: number; puntosB: number }[];
+  amonestaciones: Amonestacion[];
+  sustituciones: Sustitucion[];
+  tiemposUsadosA: { [set: number]: number };
+  tiemposUsadosB: { [set: number]: number };
+  sustitucionesUsadasA: { [set: number]: number };
+  sustitucionesUsadasB: { [set: number]: number };
+  totalSets: number;
+};
 
 type Props = {
   categoria: Categoria;
@@ -28,6 +42,10 @@ type Props = {
   capitanEquipoA?: string; // ID del jugador capitán
   capitanEquipoB?: string;
   onEscanear?: (eq: "A" | "B") => void;
+  observaciones?: string;
+  onObservacionesChange?: (text: string) => void;
+  onMatchDataChange?: (data: MatchDataExport) => void;
+  onMatchFinished?: () => void;
 };
 
 type Posicion = "I" | "II" | "III" | "IV" | "V" | "VI";
@@ -54,7 +72,7 @@ type Sustitucion = {
 
 type ModalState = {
   visible: boolean;
-  tipo?: "menu-accion" | "sustitucion" | "amonestacion" | "capitan" | "confirmacion-set" | "demora";
+  tipo?: "menu-accion" | "sustitucion" | "amonestacion" | "capitan" | "confirmacion-set" | "demora" | "seleccionar-capitan" | "lesion";
   equipo?: "A" | "B";
   posicion?: Posicion;
   jugadorDorsal?: string;
@@ -75,6 +93,8 @@ type AccionHistorial = {
     puntosA: number;
     puntosB: number;
     setActual: number;
+    setsGanadosA: number;
+    setsGanadosB: number;
     alineacionesA: { [set: number]: Alineacion };
     alineacionesB: { [set: number]: Alineacion };
     equipoSaca: "A" | "B";
@@ -106,6 +126,10 @@ export default function PartidoView({
   capitanEquipoA,
   capitanEquipoB,
   onEscanear,
+  observaciones = "",
+  onObservacionesChange,
+  onMatchDataChange,
+  onMatchFinished,
 }: Props) {
   const { theme, assets, communityId } = useCommunity();
   
@@ -127,9 +151,13 @@ export default function PartidoView({
   const [cambioCampoSet5, setCambioCampoSet5] = useState(false);
   const [swapLados, setSwapLados] = useState(false);
 
-  // Alineaciones por set
-  const [alineacionesA, setAlineacionesA] = useState<{ [set: number]: Alineacion }>({});
-  const [alineacionesB, setAlineacionesB] = useState<{ [set: number]: Alineacion }>({});
+  // Alineaciones por set (con datos de ejemplo para testing)
+  const [alineacionesA, setAlineacionesA] = useState<{ [set: number]: Alineacion }>({
+    1: { I: "5", II: "12", III: "8", IV: "3", V: "7", VI: "15" }
+  });
+  const [alineacionesB, setAlineacionesB] = useState<{ [set: number]: Alineacion }>({
+    1: { I: "9", II: "11", III: "6", IV: "2", V: "14", VI: "10" }
+  });
 
   // Control de capitanes en pista (pueden cambiar durante el partido)
   const [capitanPistaA, setCapitanPistaA] = useState<string | undefined>(capitanEquipoA);
@@ -144,6 +172,9 @@ export default function PartidoView({
   // Historial
   const [amonestaciones, setAmonestaciones] = useState<Amonestacion[]>([]);
   const [sustituciones, setSustituciones] = useState<Sustitucion[]>([]);
+
+  // Marcador de sets finalizados
+  const [marcadorSets, setMarcadorSets] = useState<{ puntosA: number; puntosB: number }[]>([]);
 
   // Modal
   const [modal, setModal] = useState<ModalState>({ visible: false });
@@ -163,9 +194,32 @@ export default function PartidoView({
   // Historial para deshacer
   const [historial, setHistorial] = useState<AccionHistorial[]>([]);
 
+  // Estado de rotación animada
+  const [rotando, setRotando] = useState(false);
+  const [direccionRotacion, setDireccionRotacion] = useState<'horario' | 'antihorario'>('horario');
+
+  // Valores animados para cada posición
+  const animacionesA = useRef({
+    I: new Animated.Value(1),
+    II: new Animated.Value(1),
+    III: new Animated.Value(1),
+    IV: new Animated.Value(1),
+    V: new Animated.Value(1),
+    VI: new Animated.Value(1),
+  }).current;
+
+  const animacionesB = useRef({
+    I: new Animated.Value(1),
+    II: new Animated.Value(1),
+    III: new Animated.Value(1),
+    IV: new Animated.Value(1),
+    V: new Animated.Value(1),
+    VI: new Animated.Value(1),
+  }).current;
+
   // ===== EFECTO PARA TIMER DE TIMEOUT =====
   useEffect(() => {
-    let intervalo: NodeJS.Timeout;
+    let intervalo: ReturnType<typeof setInterval>;
     if (timeoutActivo && segundosRestantes > 0) {
       intervalo = setInterval(() => {
         setSegundosRestantes(prev => prev - 1);
@@ -176,11 +230,31 @@ export default function PartidoView({
     return () => clearInterval(intervalo);
   }, [timeoutActivo, segundosRestantes]);
 
+  // ===== NOTIFICAR DATOS DEL PARTIDO AL PADRE =====
+  useEffect(() => {
+    if (onMatchDataChange) {
+      onMatchDataChange({
+        setsGanadosA,
+        setsGanadosB,
+        marcadorSets,
+        amonestaciones,
+        sustituciones,
+        tiemposUsadosA,
+        tiemposUsadosB,
+        sustitucionesUsadasA,
+        sustitucionesUsadasB,
+        totalSets,
+      });
+    }
+  }, [setsGanadosA, setsGanadosB, marcadorSets, amonestaciones, sustituciones, tiemposUsadosA, tiemposUsadosB, sustitucionesUsadasA, sustitucionesUsadasB]);
+
   // ===== GUARDAR ESTADO ACTUAL =====
   const guardarEstadoActual = (): AccionHistorial["estadoAnterior"] => ({
     puntosA,
     puntosB,
     setActual,
+    setsGanadosA,
+    setsGanadosB,
     alineacionesA: { ...alineacionesA },
     alineacionesB: { ...alineacionesB },
     equipoSaca,
@@ -199,20 +273,78 @@ export default function PartidoView({
     const ultimaAccion = historial[historial.length - 1];
     const estado = ultimaAccion.estadoAnterior;
 
-    setPuntosA(estado.puntosA);
-    setPuntosB(estado.puntosB);
-    setSetActual(estado.setActual);
-    setAlineacionesA(estado.alineacionesA);
-    setAlineacionesB(estado.alineacionesB);
-    setEquipoSaca(estado.equipoSaca);
-    setTiemposUsadosA(estado.tiemposUsadosA);
-    setTiemposUsadosB(estado.tiemposUsadosB);
-    setSustitucionesUsadasA(estado.sustitucionesUsadasA);
-    setSustitucionesUsadasB(estado.sustitucionesUsadasB);
-    setAmonestaciones(estado.amonestaciones);
-    setSustituciones(estado.sustituciones);
+    // Si la última acción fue un punto con rotación, animar rotación inversa
+    if (ultimaAccion.tipo === "punto" && ultimaAccion.data.rotacion && ultimaAccion.equipo) {
+      setRotando(true);
+      setDireccionRotacion('antihorario');
+      
+      // Primero restaurar el estado
+      setPuntosA(estado.puntosA);
+      setPuntosB(estado.puntosB);
+      setSetActual(estado.setActual);
+      setSetsGanadosA(estado.setsGanadosA);
+      setSetsGanadosB(estado.setsGanadosB);
+      setEquipoSaca(estado.equipoSaca);
+      setTiemposUsadosA(estado.tiemposUsadosA);
+      setTiemposUsadosB(estado.tiemposUsadosB);
+      setSustitucionesUsadasA(estado.sustitucionesUsadasA);
+      setSustitucionesUsadasB(estado.sustitucionesUsadasB);
+      setAmonestaciones(estado.amonestaciones);
+      setSustituciones(estado.sustituciones);
+      
+      // Animar la rotación inversa
+      const equipo = ultimaAccion.equipo;
+      const animaciones = equipo === "A" ? animacionesA : animacionesB;
+      const posiciones: Posicion[] = ["I", "II", "III", "IV", "V", "VI"];
+      
+      // Fade out
+      Animated.parallel(
+        posiciones.map(pos => 
+          Animated.timing(animaciones[pos], {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        )
+      ).start(() => {
+        // Restaurar alineaciones en medio de la animación
+        setAlineacionesA(estado.alineacionesA);
+        setAlineacionesB(estado.alineacionesB);
+        
+        // Fade in
+        Animated.parallel(
+          posiciones.map(pos => 
+            Animated.timing(animaciones[pos], {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            })
+          )
+        ).start(() => {
+          setRotando(false);
+        });
+      });
+      
+      setHistorial(historial.slice(0, -1));
+    } else {
+      // Sin rotación, deshacer normalmente
+      setPuntosA(estado.puntosA);
+      setPuntosB(estado.puntosB);
+      setSetActual(estado.setActual);
+      setSetsGanadosA(estado.setsGanadosA);
+      setSetsGanadosB(estado.setsGanadosB);
+      setAlineacionesA(estado.alineacionesA);
+      setAlineacionesB(estado.alineacionesB);
+      setEquipoSaca(estado.equipoSaca);
+      setTiemposUsadosA(estado.tiemposUsadosA);
+      setTiemposUsadosB(estado.tiemposUsadosB);
+      setSustitucionesUsadasA(estado.sustitucionesUsadasA);
+      setSustitucionesUsadasB(estado.sustitucionesUsadasB);
+      setAmonestaciones(estado.amonestaciones);
+      setSustituciones(estado.sustituciones);
 
-    setHistorial(historial.slice(0, -1));
+      setHistorial(historial.slice(0, -1));
+    }
   };
 
   // Determinar equipos en cada lado (se invierten cada set)
@@ -262,8 +394,51 @@ export default function PartidoView({
     }
   };
 
+  // ===== ANIMACIÓN DE ROTACIÓN =====
+  const animarRotacion = (equipo: "A" | "B", direccion: 'horario' | 'antihorario' = 'horario') => {
+    const animaciones = equipo === "A" ? animacionesA : animacionesB;
+    const posiciones: Posicion[] = ["I", "II", "III", "IV", "V", "VI"];
+    
+    // Fade out con desplazamiento
+    Animated.parallel(
+      posiciones.map(pos => 
+        Animated.timing(animaciones[pos], {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        })
+      )
+    ).start(() => {
+      // Rotar en medio de la animación
+      rotar(equipo);
+      
+      // Fade in
+      Animated.parallel(
+        posiciones.map(pos => 
+          Animated.timing(animaciones[pos], {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        )
+      ).start();
+    });
+  };
+
   // ===== ANOTAR PUNTO =====
   const anotarPunto = (equipo: "A" | "B") => {
+    // Verificar si el set ya está terminado (no permitir más puntos)
+    const puntosGanador = (totalSets === 5 && setActual === 5) || (totalSets === 3 && setActual === 3) ? 15 : 25;
+    
+    // Verificar si ya hay un ganador del set
+    if (puntosA >= puntosGanador || puntosB >= puntosGanador) {
+      const diferencia = Math.abs(puntosA - puntosB);
+      if (diferencia >= 2) {
+        // El set ya está terminado, no permitir más puntos
+        return;
+      }
+    }
+
     const estadoAnterior = guardarEstadoActual();
     const nuevoPuntosA = equipo === "A" ? puntosA + 1 : puntosA;
     const nuevoPuntosB = equipo === "B" ? puntosB + 1 : puntosB;
@@ -273,8 +448,13 @@ export default function PartidoView({
 
     // Si el equipo que hizo el punto NO estaba sacando, rotar
     if (equipo !== equipoSaca) {
-      rotar(equipo);
-      setEquipoSaca(equipo);
+      setRotando(true);
+      setDireccionRotacion('horario');
+      animarRotacion(equipo, 'horario');
+      setTimeout(() => {
+        setEquipoSaca(equipo);
+        setRotando(false);
+      }, 1000);
     }
 
     setHistorial([...historial, {
@@ -285,8 +465,6 @@ export default function PartidoView({
     }]);
 
     // Verificar fin de set
-    const puntosGanador = totalSets === 5 && setActual === 5 ? 15 : 25;
-    
     if (nuevoPuntosA >= puntosGanador || nuevoPuntosB >= puntosGanador) {
       const diferencia = Math.abs(nuevoPuntosA - nuevoPuntosB);
       if (diferencia >= 2) {
@@ -313,13 +491,18 @@ export default function PartidoView({
   };
 
   // ===== CONFIRMAR FIN DE SET =====
+  const setsParaGanar = totalSets === 5 ? 3 : 2;
+
   const confirmarFinSet = () => {
+    // Guardar marcador del set finalizado
+    setMarcadorSets(prev => [...prev, { puntosA, puntosB }]);
+
     // Determinar ganador del set
-    if (puntosA > puntosB) {
-      setSetsGanadosA(setsGanadosA + 1);
-    } else {
-      setSetsGanadosB(setsGanadosB + 1);
-    }
+    const newSetsA = puntosA > puntosB ? setsGanadosA + 1 : setsGanadosA;
+    const newSetsB = puntosB > puntosA ? setsGanadosB + 1 : setsGanadosB;
+
+    setSetsGanadosA(newSetsA);
+    setSetsGanadosB(newSetsB);
 
     // Reiniciar marcador
     setPuntosA(0);
@@ -332,8 +515,24 @@ export default function PartidoView({
     setCambioCampoSet5(false);
     setSwapLados(false);
 
-    // Cerrar modal
+    // Cerrar modal de confirmación de set
     setModal({ visible: false });
+
+    // Comprobar si el partido ha terminado
+    if (newSetsA >= setsParaGanar || newSetsB >= setsParaGanar) {
+      const ganador = newSetsA >= setsParaGanar ? nombreEquipoA : nombreEquipoB;
+      setTimeout(() => {
+        setCustomAlert({
+          visible: true,
+          title: '¡Partido Finalizado!',
+          message: `${ganador} ha ganado el partido ${newSetsA} - ${newSetsB}.\n\n¿Desea finalizar y pasar al acta de cierre?`,
+          onConfirm: () => {
+            setCustomAlert({ visible: false });
+            onMatchFinished?.();
+          },
+        });
+      }, 400);
+    }
   };
 
   // ===== RENDERIZAR POSICIÓN =====
@@ -346,6 +545,10 @@ export default function PartidoView({
     const capitanPista = equipo === "A" ? capitanPistaA : capitanPistaB;
     const jugador = (equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB).find(j => j.dorsal === dorsal);
     const esCapitan = jugador && (jugador.id === capitanPista || jugador.esCapitan);
+
+    // Obtener valor animado
+    const animaciones = equipo === "A" ? animacionesA : animacionesB;
+    const animatedValue = animaciones[pos];
 
     return (
       <View key={pos} style={styles.posicionWrapper}>
@@ -363,11 +566,23 @@ export default function PartidoView({
                 });
               }
             }}
-            disabled={dorsal === "-"}
+            disabled={dorsal === "-" || rotando}
           >
             <Text style={styles.posLabel}>{pos}</Text>
             <View style={styles.divisor} />
-            <Text style={styles.numLabel}>{dorsal}</Text>
+            <Animated.Text 
+              style={[
+                styles.numLabel,
+                {
+                  opacity: animatedValue,
+                  transform: [
+                    { scale: animatedValue },
+                  ]
+                }
+              ]}
+            >
+              {dorsal}
+            </Animated.Text>
           </TouchableOpacity>
         </View>
 
@@ -466,6 +681,11 @@ export default function PartidoView({
 
     const estadoAnterior = guardarEstadoActual();
 
+    // Verificar si el jugador que sale es el capitán en pista
+    const capitanPista = equipo === "A" ? capitanPistaA : capitanPistaB;
+    const jugadorQueSale = (equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB).find(j => j.dorsal === sale);
+    const esCapitanSaliendo = jugadorQueSale && jugadorQueSale.id === capitanPista;
+
     // Actualizar alineación
     const alineacion = equipo === "A" ? { ...alineacionActualA } : { ...alineacionActualB };
     const posicion = Object.keys(alineacion).find(p => alineacion[p as Posicion] === sale) as Posicion | undefined;
@@ -491,17 +711,28 @@ export default function PartidoView({
         estadoAnterior,
       }]);
 
-      // Mostrar alerta si es la 5ª o 6ª sustitución
-      const nuevasSustituciones = sustitucionesActuales + 1;
-      if (nuevasSustituciones === 5 || nuevasSustituciones === 6) {
+      // Si el capitán sale del campo, mostrar modal para elegir nuevo capitán
+      if (esCapitanSaliendo) {
         setTimeout(() => {
-          setCustomAlert({
+          setModal({
             visible: true,
-            title: "Aviso de Sustituciones",
-            message: `El Equipo ${equipo} lleva ${nuevasSustituciones} sustituciones realizadas en este set.${nuevasSustituciones === 6 ? " Ha alcanzado el límite." : ""}`,
-            onConfirm: () => setCustomAlert({ visible: false }),
+            tipo: "seleccionar-capitan",
+            equipo,
           });
         }, 300);
+      } else {
+        // Mostrar alerta si es la 5ª o 6ª sustitución
+        const nuevasSustituciones = sustitucionesActuales + 1;
+        if (nuevasSustituciones === 5 || nuevasSustituciones === 6) {
+          setTimeout(() => {
+            setCustomAlert({
+              visible: true,
+              title: "Aviso de Sustituciones",
+              message: `El Equipo ${equipo} lleva ${nuevasSustituciones} sustituciones realizadas en este set.${nuevasSustituciones === 6 ? " Ha alcanzado el límite." : ""}`,
+              onConfirm: () => setCustomAlert({ visible: false }),
+            });
+          }, 300);
+        }
       }
     }
 
@@ -539,6 +770,28 @@ export default function PartidoView({
       setCapitanPistaB(jugadorId);
     }
     setModal({ visible: false });
+  };
+
+  // ===== REGISTRAR LESIÓN =====
+  const registrarLesion = (equipo: "A" | "B", dorsal: string) => {
+    const jugador = (equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB).find(j => j.dorsal === dorsal);
+    if (!jugador) return;
+
+    const nombreEquipo = equipo === "A" ? nombreEquipoA : nombreEquipoB;
+    const marcador = `${puntosA}-${puntosB}`;
+    const textoLesion = `El jugador ${jugador.apellidos}, ${jugador.nombre} con dorsal ${dorsal} del equipo ${nombreEquipo} se lesiona en el punto ${marcador} del set ${setActual}.`;
+    
+    // Añadir a observaciones
+    const nuevasObservaciones = observaciones ? `${observaciones}\n\n${textoLesion}` : textoLesion;
+    onObservacionesChange?.(nuevasObservaciones);
+
+    // Mostrar modal de sustitución
+    setModal({
+      visible: true,
+      tipo: "lesion",
+      equipo,
+      jugadorDorsal: dorsal,
+    });
   };
 
   // ===== RENDERIZAR MODAL =====
@@ -580,125 +833,198 @@ export default function PartidoView({
     // Modal de demora (para jugadores del banquillo)
     if (modal.tipo === "demora" && modal.equipo && modal.jugadorDorsal) {
       return (
-        <Modal transparent animationType="fade" visible={modal.visible}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Amonestaciones - Banquillo #{modal.jugadorDorsal}</Text>
-              
-              <View style={styles.amonestacionButtons}>
-                <TouchableOpacity
-                  style={[styles.amonestacionButton, styles.amarillaButton]}
-                  onPress={() => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "demora-amarilla")}
-                >
-                  <Text style={[styles.amonestacionButtonText, styles.amarillaText]}>Demora Amarilla</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.amonestacionButton, styles.rojaButton]}
-                  onPress={() => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "demora-roja")}
-                >
-                  <Text style={[styles.amonestacionButtonText, styles.rojaText]}>Demora Roja</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonSecondary]}
-                  onPress={() => setModal({ visible: false })}
-                >
-                  <Text style={styles.modalButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <CustomAlert
+          visible={modal.visible}
+          theme={theme}
+          assets={assets!}
+          message={`Banquillo #${modal.jugadorDorsal}\n\nSelecciona el tipo de demora:`}
+          showResetButton={false}
+          customButtons={[
+            {
+              text: "Demora Amarilla",
+              icon: (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <VectorIcon name="demora" size={18} color="#f59e0b" />
+                  <VectorIcon name="card-yellow" size={18} color="#f59e0b" />
+                </View>
+              ),
+              onPress: () => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "demora-amarilla"),
+              isPrimary: false,
+            },
+            {
+              text: "Demora Roja",
+              icon: (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <VectorIcon name="demora" size={18} color="#ef4444" />
+                  <VectorIcon name="card-red" size={18} color="#ef4444" />
+                </View>
+              ),
+              onPress: () => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "demora-roja"),
+              isPrimary: false,
+            },
+          ]}
+          onCancel={() => setModal({ visible: false })}
+          onAccept={() => setModal({ visible: false })}
+        />
       );
     }
 
     // Menú principal de acciones (jugador en pista)
     if (modal.tipo === "menu-accion" && modal.equipo && modal.jugadorDorsal && modal.posicion) {
+      // Verificar si el capitán registrado está en pista
+      const capitanRegistrado = modal.equipo === "A" ? capitanEquipoA : capitanEquipoB;
+      const alineacionActual = modal.equipo === "A" ? alineacionActualA : alineacionActualB;
+      const jugadoresEnCampo = Object.values(alineacionActual);
+      const jugadoresEquipo = modal.equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB;
+      const capitanEnPista = jugadoresEquipo.find(j => j.id === capitanRegistrado && jugadoresEnCampo.includes(j.dorsal || ""));
+      const botonCapitanDeshabilitado = !!capitanEnPista;
+      
       return (
-        <Modal transparent animationType="fade" visible={modal.visible}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Acciones - Jugador #{modal.jugadorDorsal}</Text>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary, { marginBottom: 10 }]}
-                onPress={() => setModal({ ...modal, tipo: "sustitucion" })}
-              >
-                <Text style={styles.modalButtonText}>SUSTITUIR</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary, { marginBottom: 10 }]}
-                onPress={() => {
-                  const jugador = (modal.equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB)
-                    .find(j => j.dorsal === modal.jugadorDorsal);
-                  if (jugador) {
-                    designarCapitanPista(modal.equipo!, jugador.id);
-                  }
-                }}
-              >
-                <Text style={styles.modalButtonText}>CAPITÁN EN PISTA</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonDanger, { marginBottom: 10 }]}
-                onPress={() => setModal({ ...modal, tipo: "amonestacion" })}
-              >
-                <Text style={styles.modalButtonText}>AMONESTAR</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonSecondary]}
-                onPress={() => setModal({ visible: false })}
-              >
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <CustomAlert
+          visible={modal.visible}
+          theme={theme}
+          assets={assets!}
+          message={`Jugador #${modal.jugadorDorsal}\n\nSelecciona una acción:`}
+          showResetButton={false}
+          customButtons={[
+            {
+              text: "SUSTITUIR",
+              icon: <VectorIcon name="swap-horizontal" size={20} color={theme.primary} />,
+              onPress: () => setModal({ ...modal, tipo: "sustitucion" }),
+              isPrimary: true,
+            },
+            {
+              text: "CAPITÁN EN PISTA",
+              icon: <VectorIcon name="star" size={20} color={botonCapitanDeshabilitado ? "#9ca3af" : theme.primary} />,
+              onPress: () => {
+                if (botonCapitanDeshabilitado) return;
+                const jugador = (modal.equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB)
+                  .find(j => j.dorsal === modal.jugadorDorsal);
+                if (jugador) {
+                  designarCapitanPista(modal.equipo!, jugador.id);
+                }
+              },
+              isPrimary: true,
+              disabled: botonCapitanDeshabilitado,
+            },
+            {
+              text: "LESIÓN",
+              icon: <VectorIcon name="medical" size={20} color={theme.primary} />,
+              onPress: () => registrarLesion(modal.equipo!, modal.jugadorDorsal!),
+              isPrimary: true,
+            },
+            {
+              text: "SANCIONAR",
+              icon: <VectorIcon name="warning" size={20} color={theme.primary} />,
+              onPress: () => setModal({ ...modal, tipo: "amonestacion" }),
+              isPrimary: true,
+            },
+          ]}
+          onCancel={() => setModal({ visible: false })}
+          onAccept={() => setModal({ visible: false })}
+        />
       );
     }
 
     // Modal de amonestaciones
     if (modal.tipo === "amonestacion" && modal.equipo && modal.jugadorDorsal) {
       return (
+        <CustomAlert
+          visible={modal.visible}
+          theme={theme}
+          assets={assets!}
+          message={`Jugador #${modal.jugadorDorsal}\n\nSelecciona el tipo de amonestación:`}
+          showResetButton={false}
+          customButtons={[
+            {
+              text: "Amarilla",
+              icon: <VectorIcon name="card-yellow" size={24} color={theme.primary} />,
+              onPress: () => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "amarilla"),
+              isPrimary: false,
+              outlined: true,
+              outlineColor: theme.primary,
+            },
+            {
+              text: "Roja",
+              icon: <VectorIcon name="card-red" size={24} color={theme.primary} />,
+              onPress: () => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "roja"),
+              isPrimary: false,
+              outlined: true,
+              outlineColor: theme.primary,
+            },
+            {
+              text: "Expulsión",
+              icon: <VectorIcon name="expulsion" size={24} color={theme.primary} />,
+              onPress: () => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "expulsion"),
+              isPrimary: false,
+              outlined: true,
+              outlineColor: theme.primary,
+            },
+            {
+              text: "Descalificación",
+              icon: <VectorIcon name="descalificacion" size={24} color={theme.primary} />,
+              onPress: () => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "descalificacion"),
+              isPrimary: false,
+              outlined: true,
+              outlineColor: theme.primary,
+            },
+          ]}
+          onCancel={() => setModal({ visible: false })}
+          onAccept={() => setModal({ visible: false })}
+        />
+      );
+    }
+
+    // Modal para seleccionar nuevo capitán (después de sustituir al capitán)
+    if (modal.tipo === "seleccionar-capitan" && modal.equipo) {
+      const alineacionActual = modal.equipo === "A" ? alineacionActualA : alineacionActualB;
+      const jugadoresEnPista = Object.entries(alineacionActual).map(([pos, dorsal]) => {
+        const jugador = (modal.equipo === "A" ? jugadoresEquipoA : jugadoresEquipoB).find(j => j.dorsal === dorsal);
+        return jugador ? { ...jugador, posicion: pos } : null;
+      }).filter(Boolean);
+
+      return (
+        <CustomAlert
+          visible={modal.visible}
+          theme={theme}
+          assets={assets!}
+          message={`El capitán ha sido sustituido.\n\nSelecciona el nuevo capitán en pista:`}
+          showResetButton={false}
+          customButtons={jugadoresEnPista.map(jugador => ({
+            text: `#${jugador!.dorsal} - ${jugador!.nombre} ${jugador!.apellidos}`,
+            onPress: () => designarCapitanPista(modal.equipo!, jugador!.id),
+            isPrimary: false,
+          }))}
+          onCancel={() => setModal({ visible: false })}
+          onAccept={() => setModal({ visible: false })}
+        />
+      );
+    }
+
+    // Modal de lesión (igual que sustitución)
+    if (modal.tipo === "lesion" && modal.equipo && modal.jugadorDorsal) {
+      const jugadoresBanquillo = modal.equipo === "A" ? jugadoresBanquilloA : jugadoresBanquilloB;
+      
+      return (
         <Modal transparent animationType="fade" visible={modal.visible}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Amonestar Jugador #{modal.jugadorDorsal}</Text>
+              <Text style={styles.modalTitle}>Lesión - Jugador #{modal.jugadorDorsal}</Text>
+              <Text style={styles.modalSubtitle}>Selecciona un jugador del banquillo:</Text>
               
-              <View style={styles.amonestacionButtons}>
-                <TouchableOpacity
-                  style={[styles.amonestacionButton, styles.amarillaButton]}
-                  onPress={() => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "amarilla")}
-                >
-                  <Text style={[styles.amonestacionButtonText, styles.amarillaText]}>Amarilla</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.amonestacionButton, styles.rojaButton]}
-                  onPress={() => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "roja")}
-                >
-                  <Text style={[styles.amonestacionButtonText, styles.rojaText]}>Roja</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.amonestacionButton, styles.rojaButton]}
-                  onPress={() => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "expulsion")}
-                >
-                  <Text style={[styles.amonestacionButtonText, styles.rojaText]}>Expulsión</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.amonestacionButton, styles.rojaButton]}
-                  onPress={() => aplicarAmonestacion(modal.equipo!, modal.jugadorDorsal!, "descalificacion")}
-                >
-                  <Text style={[styles.amonestacionButtonText, styles.rojaText]}>Descalificación</Text>
-                </TouchableOpacity>
-              </View>
+              <ScrollView style={styles.modalList}>
+                {jugadoresBanquillo.map(j => (
+                  <TouchableOpacity
+                    key={j.id}
+                    style={styles.modalListItem}
+                    onPress={() => realizarSustitucion(modal.equipo!, modal.jugadorDorsal!, j.dorsal || "")}
+                  >
+                    <Text style={styles.modalListItemText}>
+                      #{j.dorsal} - {j.nombre} {j.apellidos}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -778,18 +1104,43 @@ export default function PartidoView({
           {/* Marcador */}
           <View style={styles.scoreboardContainer}>
             <View style={styles.scoreboardTop}>
+              {/* Sets ganados Equipo Izquierdo */}
+              <View style={styles.setsIndicatorContainer}>
+                {Array.from({ length: totalSets === 5 ? 3 : 2 }).map((_, index) => (
+                  <View
+                    key={`izq-${index}`}
+                    style={[
+                      styles.setCircle,
+                      index < (equipoIzq === "A" ? setsGanadosA : setsGanadosB) && styles.setCircleFilled
+                    ]}
+                  />
+                ))}
+              </View>
+
+              {/* Indicador de Set Actual */}
               <View style={styles.setIndicator}>
                 <Text style={styles.setIndicatorText}>SET {setActual}/{totalSets}</Text>
               </View>
-              <Text style={{ color: "#9ca3af", fontSize: 12, fontWeight: "600" }}>
-                Sets: {setsGanadosA} - {setsGanadosB}
-              </Text>
+
+              {/* Sets ganados Equipo Derecho */}
+              <View style={styles.setsIndicatorContainer}>
+                {Array.from({ length: totalSets === 5 ? 3 : 2 }).map((_, index) => (
+                  <View
+                    key={`der-${index}`}
+                    style={[
+                      styles.setCircle,
+                      index < (equipoDer === "A" ? setsGanadosA : setsGanadosB) && styles.setCircleFilled
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
 
             <View style={styles.scoreRow}>
               <TouchableOpacity 
                 style={styles.teamScore}
-                onPress={() => anotarPunto(equipoIzq)}
+                onPress={() => !rotando && anotarPunto(equipoIzq)}
+                disabled={rotando}
               >
                 <Text style={styles.teamNameScore}>{equipoIzq === "A" ? nombreEquipoA : nombreEquipoB}</Text>
                 <Text style={styles.scoreValue}>{equipoIzq === "A" ? puntosA : puntosB}</Text>
@@ -799,7 +1150,8 @@ export default function PartidoView({
 
               <TouchableOpacity 
                 style={styles.teamScore}
-                onPress={() => anotarPunto(equipoDer)}
+                onPress={() => !rotando && anotarPunto(equipoDer)}
+                disabled={rotando}
               >
                 <Text style={styles.teamNameScore}>{equipoDer === "A" ? nombreEquipoA : nombreEquipoB}</Text>
                 <Text style={styles.scoreValue}>{equipoDer === "A" ? puntosA : puntosB}</Text>
@@ -829,29 +1181,14 @@ export default function PartidoView({
             {/* Botón SWAP en set decisivo (solo si van 2-2 o en set decisivo) */}
             {((totalSets === 5 && setActual === 5 && setsGanadosA === 2 && setsGanadosB === 2) ||
               (totalSets === 3 && setActual === 3 && setsGanadosA === 1 && setsGanadosB === 1)) && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: -18,
-                  left: 0,
-                  right: 0,
-                  alignItems: "center",
-                  zIndex: 30,
-                }}
-              >
+              <View style={styles.swapButtonContainer}>
                 <TouchableOpacity
                   onPress={() => setSwapLados(!swapLados)}
-                  style={{
-                    backgroundColor: "#facc15",
-                    padding: 6,
-                    borderRadius: 30,
-                    borderWidth: 1,
-                    borderColor: "#d97706",
-                  }}
+                  style={styles.swapButton}
                 >
                   <Image
                     source={icons.swap}
-                    style={{ width: 24, height: 24, tintColor: "#000" }}
+                    style={styles.swapIcon}
                   />
                 </TouchableOpacity>
               </View>
@@ -887,32 +1224,46 @@ export default function PartidoView({
             )}
           </View>
 
-          {/* Botones QR */}
-          {(jugadoresEquipoA.length === 0 || jugadoresEquipoB.length === 0) && (
-            <View style={styles.qrRow}>
-              <TouchableOpacity
-                style={[styles.qrButton, styles.qrButtonLeft]}
-                onPress={() => {
-                  setEquipoEscanear(equipoIzq);
-                  setScannerVisible(true);
-                }}
-              >
-                <Image source={icons.qr} style={styles.qrIcon} />
-                <Text style={styles.qrButtonText}>{`ESCANEAR\nEQUIPO ${equipoIzq}`}</Text>
-              </TouchableOpacity>
+          {/* Controles: Tiempos y Sustituciones por equipo */}
+          <View style={styles.controlesSection}>
+            <View style={styles.controlesRow}>
+              {/* Equipo A */}
+              <View style={styles.controlesEquipo}>
+                <TouchableOpacity style={styles.controlBox} onPress={() => usarTiempo("A")}>
+                  <View style={styles.controlIconRow}>
+                    <VectorIcon name="clock-outline" size={20} color={theme.primary} />
+                    <Text style={styles.controlTitle}>TIEMPOS</Text>
+                  </View>
+                  <Text style={styles.controlValue}>{tiemposUsadosA[setActual] || 0}/2</Text>
+                </TouchableOpacity>
+                <View style={styles.controlBox}>
+                  <View style={styles.controlIconRow}>
+                    <VectorIcon name="swap-horizontal" size={20} color={theme.primary} />
+                    <Text style={styles.controlTitle}>SUSTITUCIONES</Text>
+                  </View>
+                  <Text style={styles.controlValue}>{sustitucionesUsadasA[setActual] || 0}/6</Text>
+                </View>
+              </View>
 
-              <TouchableOpacity
-                style={[styles.qrButton, styles.qrButtonRight]}
-                onPress={() => {
-                  setEquipoEscanear(equipoDer);
-                  setScannerVisible(true);
-                }}
-              >
-                <Image source={icons.qr} style={styles.qrIcon} />
-                <Text style={styles.qrButtonText}>{`ESCANEAR\nEQUIPO ${equipoDer}`}</Text>
-              </TouchableOpacity>
+              {/* Equipo B */}
+              <View style={styles.controlesEquipo}>
+                <TouchableOpacity style={styles.controlBox} onPress={() => usarTiempo("B")}>
+                  <View style={styles.controlIconRow}>
+                    <VectorIcon name="clock-outline" size={20} color={theme.primary} />
+                    <Text style={styles.controlTitle}>TIEMPOS</Text>
+                  </View>
+                  <Text style={styles.controlValue}>{tiemposUsadosB[setActual] || 0}/2</Text>
+                </TouchableOpacity>
+                <View style={styles.controlBox}>
+                  <View style={styles.controlIconRow}>
+                    <VectorIcon name="swap-horizontal" size={20} color={theme.primary} />
+                    <Text style={styles.controlTitle}>SUSTITUCIONES</Text>
+                  </View>
+                  <Text style={styles.controlValue}>{sustitucionesUsadasB[setActual] || 0}/6</Text>
+                </View>
+              </View>
             </View>
-          )}
+          </View>
 
           {/* Banquillo */}
           <View style={styles.banquilloSection}>
@@ -921,16 +1272,22 @@ export default function PartidoView({
                 <View style={styles.banquilloHeader}>
                   <Text style={styles.banquilloHeaderText}>Banquillo {nombreEquipoA}</Text>
                 </View>
-                <View style={styles.banquilloContent}>
-                  <View style={styles.banquilloJugadores}>
-                    {/* Staff primero */}
-                    {staffEquipoA.map((staff, index) => {
+                <ScrollView style={styles.banquilloContent}>
+                  {/* Staff ordenado por prioridad */}
+                  {staffEquipoA
+                    .sort((a, b) => {
+                      const prioridadA = a.rol === 'entrenador' ? 1 : a.rol === 'entrenadorAsistente' ? 2 : 3;
+                      const prioridadB = b.rol === 'entrenador' ? 1 : b.rol === 'entrenadorAsistente' ? 2 : 3;
+                      return prioridadA - prioridadB;
+                    })
+                    .map((staff, index) => {
                       const codigo = staff.rol === 'entrenador' ? '1E' : staff.rol === 'entrenadorAsistente' ? 'EA' : 'D';
                       const esEntrenadorPrincipal = staff.rol === 'entrenador';
+                      const nombreCompleto = `${staff.apellidos || ''}, ${staff.nombre || ''}`;
                       return (
                         <TouchableOpacity
                           key={staff.id}
-                          style={[styles.jugadorBanquillo, styles.staffBanquillo]}
+                          style={styles.staffBanquilloItem}
                           onPress={() => {
                             setModal({
                               visible: true,
@@ -940,11 +1297,17 @@ export default function PartidoView({
                             });
                           }}
                         >
-                          <Text style={styles.jugadorBanquilloText}>{codigo}</Text>
+                          <Text style={styles.staffBanquilloCodigo}>{codigo}</Text>
+                          <Text style={styles.staffBanquilloText}>{nombreCompleto}</Text>
                         </TouchableOpacity>
                       );
                     })}
-                    {/* Jugadores en banquillo */}
+                  {/* Línea separadora si hay staff */}
+                  {staffEquipoA.length > 0 && (
+                    <View style={styles.banquilloSeparator} />
+                  )}
+                  {/* Jugadores en banquillo */}
+                  <View style={styles.banquilloJugadores}>
                     {jugadoresBanquilloA.map(j => (
                       <TouchableOpacity
                         key={j.id}
@@ -962,7 +1325,7 @@ export default function PartidoView({
                       </TouchableOpacity>
                     ))}
                   </View>
-                </View>
+                </ScrollView>
               </View>
 
               <View style={[styles.banquilloTeam, styles.banquilloRight]}>
@@ -970,15 +1333,21 @@ export default function PartidoView({
                   <Text style={styles.banquilloHeaderText}>Banquillo {nombreEquipoB}</Text>
                 </View>
                 <View style={styles.banquilloContent}>
-                  <View style={styles.banquilloJugadores}>
-                    {/* Staff primero */}
-                    {staffEquipoB.map((staff, index) => {
+                  {/* Staff ordenado por prioridad */}
+                  {staffEquipoB
+                    .sort((a, b) => {
+                      const prioridadA = a.rol === 'entrenador' ? 1 : a.rol === 'entrenadorAsistente' ? 2 : 3;
+                      const prioridadB = b.rol === 'entrenador' ? 1 : b.rol === 'entrenadorAsistente' ? 2 : 3;
+                      return prioridadA - prioridadB;
+                    })
+                    .map((staff, index) => {
                       const codigo = staff.rol === 'entrenador' ? '1E' : staff.rol === 'entrenadorAsistente' ? 'EA' : 'D';
                       const esEntrenadorPrincipal = staff.rol === 'entrenador';
+                      const nombreCompleto = `${staff.apellidos || ''}, ${staff.nombre || ''}`;
                       return (
                         <TouchableOpacity
                           key={staff.id}
-                          style={[styles.jugadorBanquillo, styles.staffBanquillo]}
+                          style={styles.staffBanquilloItem}
                           onPress={() => {
                             setModal({
                               visible: true,
@@ -988,11 +1357,17 @@ export default function PartidoView({
                             });
                           }}
                         >
-                          <Text style={styles.jugadorBanquilloText}>{codigo}</Text>
+                          <Text style={styles.staffBanquilloCodigo}>{codigo}</Text>
+                          <Text style={styles.staffBanquilloText}>{nombreCompleto}</Text>
                         </TouchableOpacity>
                       );
                     })}
-                    {/* Jugadores en banquillo */}
+                  {/* Línea separadora si hay staff */}
+                  {staffEquipoB.length > 0 && (
+                    <View style={styles.banquilloSeparator} />
+                  )}
+                  {/* Jugadores en banquillo */}
+                  <View style={styles.banquilloJugadores}>
                     {jugadoresBanquilloB.map(j => (
                       <TouchableOpacity
                         key={j.id}
@@ -1015,34 +1390,30 @@ export default function PartidoView({
             </View>
           </View>
 
-          {/* Controles: Tiempos y Sustituciones por equipo */}
-          <View style={styles.controlesSection}>
-            <View style={styles.controlesRow}>
-              {/* Equipo A */}
-              <View style={styles.controlesEquipo}>
-                <TouchableOpacity style={styles.controlBox} onPress={() => usarTiempo("A")}>
-                  <Text style={styles.controlTitle}>TIEMPOS</Text>
-                  <Text style={styles.controlValue}>{tiemposUsadosA[setActual] || 0}/2</Text>
-                </TouchableOpacity>
-                <View style={styles.controlBox}>
-                  <Text style={styles.controlTitle}>SUSTITUCIONES</Text>
-                  <Text style={styles.controlValue}>{sustitucionesUsadasA[setActual] || 0}/6</Text>
-                </View>
-              </View>
+          {/* Botones QR */}
+          <View style={styles.qrRow}>
+              <TouchableOpacity
+                style={[styles.qrButton, styles.qrButtonLeft]}
+                onPress={() => {
+                  setEquipoEscanear(equipoIzq);
+                  setScannerVisible(true);
+                }}
+              >
+                <Image source={icons.qr} style={styles.qrIcon} />
+                <Text style={styles.qrButtonText}>{`ESCANEAR\nEQUIPO ${equipoIzq}`}</Text>
+              </TouchableOpacity>
 
-              {/* Equipo B */}
-              <View style={styles.controlesEquipo}>
-                <TouchableOpacity style={styles.controlBox} onPress={() => usarTiempo("B")}>
-                  <Text style={styles.controlTitle}>TIEMPOS</Text>
-                  <Text style={styles.controlValue}>{tiemposUsadosB[setActual] || 0}/2</Text>
-                </TouchableOpacity>
-                <View style={styles.controlBox}>
-                  <Text style={styles.controlTitle}>SUSTITUCIONES</Text>
-                  <Text style={styles.controlValue}>{sustitucionesUsadasB[setActual] || 0}/6</Text>
-                </View>
-              </View>
+              <TouchableOpacity
+                style={[styles.qrButton, styles.qrButtonRight]}
+                onPress={() => {
+                  setEquipoEscanear(equipoDer);
+                  setScannerVisible(true);
+                }}
+              >
+                <Image source={icons.qr} style={styles.qrIcon} />
+                <Text style={styles.qrButtonText}>{`ESCANEAR\nEQUIPO ${equipoDer}`}</Text>
+              </TouchableOpacity>
             </View>
-          </View>
       </View>
 
       {/* Modal */}
@@ -1050,54 +1421,93 @@ export default function PartidoView({
 
       {/* Scanner QR */}
       <Modal visible={scannerVisible} animationType="slide">
-        <View style={{ flex: 1, backgroundColor: "black" }}>
-          <Camera
+        <View style={styles.scannerContainer}>
+          <Camera                                 
             style={{ flex: 1 }}
             cameraType={CameraType.Back}
             scanBarcode={true}
             showFrame={false}
             onReadCode={(event) => {
               setScannerVisible(false);
-              onEscanear?.(equipoEscanear);
+              
+              // Parsear el QR
+              let datosQR: any = {};
+              try {
+                datosQR = JSON.parse(event.nativeEvent.codeStringValue);
+              } catch {
+                setCustomAlert({
+                  visible: true,
+                  title: "QR inválido",
+                  message: "No se pudo leer el código QR correctamente",
+                  onConfirm: () => setCustomAlert({ visible: false }),
+                });
+                return;
+              }
+
+              // Obtener alineación del QR
+              const alineacion: { [pos: string]: string } =
+                datosQR.valores && typeof datosQR.valores === "object"
+                  ? datosQR.valores
+                  : {};
+
+              // Obtener lista de jugadores del equipo
+              const jugadoresEquipo = equipoEscanear === "A" ? jugadoresEquipoA : jugadoresEquipoB;
+              const dorsalesRegistrados = jugadoresEquipo.map(j => j.dorsal);
+
+              // Validar que todos los dorsales del QR estén registrados
+              const dorsalesQR = Object.values(alineacion).filter(d => d && d !== "-");
+              const dorsalesNoRegistrados = dorsalesQR.filter(d => !dorsalesRegistrados.includes(d));
+
+              if (dorsalesNoRegistrados.length > 0) {
+                const equipoNombre = equipoEscanear === "A" ? nombreEquipoA : nombreEquipoB;
+                setCustomAlert({
+                  visible: true,
+                  title: "Jugadores no registrados",
+                  message: `Los siguientes números no están registrados en la plantilla de ${equipoNombre}:\n\n${dorsalesNoRegistrados.join(", ")}\n\nRegistra estos jugadores en la fase de Plantillas antes de escanear el QR.`,
+                  onConfirm: () => setCustomAlert({ visible: false }),
+                });
+                return;
+              }
+
+              // Guardar alineación en el set actual
+              const nuevaAlineacion: Alineacion = {};
+              Object.keys(alineacion).forEach(pos => {
+                if (["I", "II", "III", "IV", "V", "VI"].includes(pos)) {
+                  nuevaAlineacion[pos as Posicion] = alineacion[pos];
+                }
+              });
+
+              if (equipoEscanear === "A") {
+                setAlineacionesA({
+                  ...alineacionesA,
+                  [setActual]: nuevaAlineacion,
+                });
+              } else {
+                setAlineacionesB({
+                  ...alineacionesB,
+                  [setActual]: nuevaAlineacion,
+                });
+              }
+
+              setCustomAlert({
+                visible: true,
+                title: "Alineación cargada",
+                message: `Se ha cargado correctamente la alineación del Equipo ${equipoEscanear} para el set ${setActual}`,
+                onConfirm: () => setCustomAlert({ visible: false }),
+              });
             }}
           />
 
           {/* Overlay cuadrado centrado */}
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 250,
-                height: 250,
-                borderColor: "white",
-                borderWidth: 2,
-                backgroundColor: "transparent",
-              }}
-            />
+          <View style={styles.scannerOverlay}>
+            <View style={styles.scannerFrame} />
           </View>
 
           <TouchableOpacity
-            style={{
-              position: "absolute",
-              bottom: 50,
-              alignSelf: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-              backgroundColor: theme?.primaryDark || "#f59e0b",
-              borderRadius: 8,
-            }}
+            style={styles.scannerCancelButton}
             onPress={() => setScannerVisible(false)}
           >
-            <Text style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}>Cancelar</Text>
+            <Text style={styles.scannerCancelText}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       </Modal>

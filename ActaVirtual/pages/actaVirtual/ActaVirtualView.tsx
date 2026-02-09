@@ -4,11 +4,13 @@ import VectorIcon from '../../components/VectorIcon';
 import { Text } from 'react-native-paper';
 import { useCommunity } from '../../context/CommunityContext';
 import DrawerMenu from '../../components/DrawerMenu';
+import CustomAlert from '../../components/CustomAlert';
 import NavBarBack from '../navBars/NavBarBack';
 import PlantillasView from '../actaFases/PlantillasView';
 import SorteoView from '../actaFases/SorteoView';
 import FirmasView from '../actaFases/FirmasView';
 import PartidoView from '../actaFases/PartidoView';
+import FinalizacionView, { MatchData } from '../actaFases/FinalizacionView';
 import { Partido } from '../../types/MockData';
 import { styles } from './styles/ActaVirtualStyles';
 
@@ -31,6 +33,9 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [observModalVisible, setObservModalVisible] = useState(false);
   const [observaciones, setObservaciones] = useState<string>(partido.observaciones || '');
+  const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [partidoFinalizado, setPartidoFinalizado] = useState(false);
+  const [blockedAlert, setBlockedAlert] = useState(false);
   const drawerAnimation = useRef(new Animated.Value(-320)).current;
 
   React.useEffect(() => {
@@ -69,12 +74,19 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
               equipoSacaInicial={"A"}
               jugadoresEquipoA={partido.jugadoresDisponiblesLocal}
               jugadoresEquipoB={partido.jugadoresDisponiblesVisitante}
+              staffEquipoA={partido.staffDisponibleLocal}
+              staffEquipoB={partido.staffDisponibleVisitante}
               nombreEquipoA={partido.equipoLocal}
               nombreEquipoB={partido.equipoVisitante}
               codigoEquipoA={(partido.equipoLocal || '').substring(0,3).toUpperCase()}
               codigoEquipoB={(partido.equipoVisitante || '').substring(0,3).toUpperCase()}
               capitanEquipoA={undefined}
               capitanEquipoB={undefined}
+              onMatchDataChange={setMatchData}
+              onMatchFinished={() => {
+                setPartidoFinalizado(true);
+                setFaseActual('finalizacion');
+              }}
               onEscanear={(eq) => {
                 // placeholder: abrir flujo de escaneo si está implementado
               }}
@@ -83,9 +95,11 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
         );
       case 'finalizacion':
         return (
-          <View style={styles.faseContainer}>
-            <Text style={styles.faseText}>Fase de Finalización (Próximamente)</Text>
-          </View>
+          <FinalizacionView
+            partido={partido}
+            matchData={matchData}
+            observaciones={observaciones}
+          />
         );
       default:
         return null;
@@ -112,6 +126,8 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
       <NavBarBack
         onBack={() => navigation.goBack()}
         onMenuPress={() => setDrawerVisible(true)}
+        showObservaciones={faseActual === 'partido'}
+        onObservacionesPress={() => setObservModalVisible(true)}
       />
 
       {/* Header con gradiente */}
@@ -198,7 +214,7 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
               getFaseColor('plantillas') === 'inactive' && styles.faseInactive,
             ]}>
               {getFaseColor('plantillas') === 'completed' ? (
-                <Text style={styles.checkmark}>✓</Text>
+                <VectorIcon name="check" size={14} color="#ffffff" />
               ) : (
                 <Text style={[
                   styles.faseNumber,
@@ -232,7 +248,7 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
               getFaseColor('sorteo') === 'inactive' && styles.faseInactive,
             ]}>
               {getFaseColor('sorteo') === 'completed' ? (
-                <Text style={styles.checkmark}>✓</Text>
+                <VectorIcon name="check" size={14} color="#ffffff" />
               ) : (
                 <Text style={[
                   styles.faseNumber,
@@ -266,7 +282,7 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
               getFaseColor('firmas') === 'inactive' && styles.faseInactive,
             ]}>
               {getFaseColor('firmas') === 'completed' ? (
-                <Text style={styles.checkmark}>✓</Text>
+                <VectorIcon name="check" size={14} color="#ffffff" />
               ) : (
                 <Text style={[
                   styles.faseNumber,
@@ -300,7 +316,7 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
               getFaseColor('partido') === 'inactive' && styles.faseInactive,
             ]}>
               {getFaseColor('partido') === 'completed' ? (
-                <Text style={styles.checkmark}>✓</Text>
+                <VectorIcon name="check" size={14} color="#ffffff" />
               ) : (
                 <Text style={[
                   styles.faseNumber,
@@ -322,7 +338,13 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
 
           <TouchableOpacity
             style={styles.faseStep}
-            onPress={() => setFaseActual('finalizacion')}
+            onPress={() => {
+              if (partidoFinalizado) {
+                setFaseActual('finalizacion');
+              } else {
+                setBlockedAlert(true);
+              }
+            }}
           >
             <View style={[
               styles.faseCircle,
@@ -332,9 +354,10 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
                 ...styles.faseActive 
               },
               getFaseColor('finalizacion') === 'inactive' && styles.faseInactive,
+              !partidoFinalizado && getFaseColor('finalizacion') !== 'active' && { opacity: 0.4 },
             ]}>
               {getFaseColor('finalizacion') === 'completed' ? (
-                <Text style={styles.checkmark}>✓</Text>
+                <VectorIcon name="check" size={14} color="#ffffff" />
               ) : (
                 <Text style={[
                   styles.faseNumber,
@@ -344,7 +367,8 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
             </View>
             <Text style={[
               styles.faseLabel,
-              { color: getFaseColor('finalizacion') === 'active' ? theme.primary : '#64748b' }
+              { color: getFaseColor('finalizacion') === 'active' ? theme.primary : '#64748b' },
+              !partidoFinalizado && { opacity: 0.4 },
             ]}>Fin</Text>
           </TouchableOpacity>
         </View>
@@ -422,6 +446,19 @@ export default function ActaVirtualView({ navigation, route }: ActaVirtualProps)
           </Animated.View>
         </View>
       </Modal>
+
+      {/* Alert when phase 5 is blocked */}
+      {assets && (
+        <CustomAlert
+          visible={blockedAlert}
+          theme={theme}
+          assets={assets}
+          message={'El partido aún no ha finalizado.\n\nPara acceder a la fase de finalización, primero debe completarse el partido (un equipo debe ganar los sets necesarios).'}
+          showResetButton={false}
+          onCancel={() => setBlockedAlert(false)}
+          onAccept={() => setBlockedAlert(false)}
+        />
+      )}
     </View>
   );
 }

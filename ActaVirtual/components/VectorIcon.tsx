@@ -1,5 +1,6 @@
 import React, { JSX } from 'react';
 import Svg, { Path, Circle } from 'react-native-svg';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type VectorIconProps = {
   name: string;
@@ -28,6 +29,103 @@ const ClockIcon = ({ size = 24, color = '#000' }: { size: number; color: string 
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Icono de reloj outline
+const ClockOutlineIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={2} fill="none" />
+    <Path
+      d="M12 7v5l3 3"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// Icono de tarjeta amarilla
+const CardYellowIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 5H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"
+      fill="#fbbf24"
+      stroke={color}
+      strokeWidth={1.5}
+    />
+  </Svg>
+);
+
+// Icono de tarjeta roja
+const CardRedIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 5H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"
+      fill="#ef4444"
+      stroke={color}
+      strokeWidth={1.5}
+    />
+  </Svg>
+);
+
+// Icono de expulsión (X en tarjeta roja)
+const ExpulsionIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 5H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"
+      fill="#ef4444"
+      stroke={color}
+      strokeWidth={1.5}
+    />
+    <Path
+      d="M8 8l8 8M16 8l-8 8"
+      stroke="#fff"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+// Icono de descalificación (!! en tarjeta roja)
+const DescalificacionIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 5H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"
+      fill="#ef4444"
+      stroke={color}
+      strokeWidth={1.5}
+    />
+    <Path
+      d="M11 8v4M13 8v4M11 15v1M13 15v1"
+      stroke="#fff"
+      strokeWidth={2}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+// Icono de demora (reloj pequeño)
+const DemoraIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth={2} fill="none" />
+    <Path
+      d="M12 8v4l2.5 2.5"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+// Icono de swap horizontal (intercambio)
+const SwapHorizontalIcon = ({ size = 24, color = '#000' }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M21 9l-4-4v3H3v2h14v3l4-4zM3 15l4 4v-3h14v-2H7v-3l-4 4z"
+      fill={color}
     />
   </Svg>
 );
@@ -510,6 +608,13 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
   const icons: { [key: string]: JSX.Element } = {
     'calendar-blank': <CalendarIcon {...iconProps} />,
     'clock-time-four-outline': <ClockIcon {...iconProps} />,
+    'clock-outline': <ClockOutlineIcon {...iconProps} />,
+    'swap-horizontal': <SwapHorizontalIcon {...iconProps} />,
+    'card-yellow': <CardYellowIcon {...iconProps} />,
+    'card-red': <CardRedIcon {...iconProps} />,
+    'expulsion': <ExpulsionIcon {...iconProps} />,
+    'descalificacion': <DescalificacionIcon {...iconProps} />,
+    'demora': <DemoraIcon {...iconProps} />,
     'calendar-clock': <CalendarClockIcon {...iconProps} />,
     'map-marker': <MapMarkerIcon {...iconProps} />,
     'pound': <PoundIcon {...iconProps} />,
@@ -545,5 +650,5 @@ export default function VectorIcon({ name, size = 18, color = '#0f172a', style }
     'volleyball': <VolleyballIcon {...iconProps} />,
   };
 
-  return icons[name] || null;
+  return icons[name] || <MaterialCommunityIcons name={name} size={size} color={color} style={style} />;
 }

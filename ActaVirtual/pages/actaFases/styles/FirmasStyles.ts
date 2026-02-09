@@ -113,6 +113,7 @@ export const styles = StyleSheet.create({
   },
   clearButton: {
     flex: 1,
+    flexDirection: 'row',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -121,6 +122,7 @@ export const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   clearButtonText: {
     fontSize: 13,
@@ -130,11 +132,13 @@ export const styles = StyleSheet.create({
   },
   signButton: {
     flex: 2,
+    flexDirection: 'row',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   signButtonText: {
     fontSize: 13,

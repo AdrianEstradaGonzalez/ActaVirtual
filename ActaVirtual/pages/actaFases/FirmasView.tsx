@@ -150,6 +150,7 @@ export default function FirmasView({ partido }: FirmasViewProps) {
                       onEnd={() => handleEnd(firma.id)}
                       onOK={(signature: string) => handleSignature(firma.id, signature)}
                       penColor="#0f172a"
+                      disabled={firma.signed}
                     />
                     {!firma.signed && (
                       <View style={styles.emptyCanvasText} pointerEvents="none">
@@ -171,12 +172,14 @@ export default function FirmasView({ partido }: FirmasViewProps) {
                       style={styles.clearButton}
                       onPress={() => handleClear(firma.id)}
                     >
+                      <VectorIcon name="delete" size={14} color="#64748b" />
                       <Text style={styles.clearButtonText}>Limpiar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.signButton, { backgroundColor: theme.primary }]}
                       onPress={() => handleEnd(firma.id)}
                     >
+                      <VectorIcon name="check" size={14} color="#ffffff" />
                       <Text style={styles.signButtonText}>Confirmar Firma</Text>
                     </TouchableOpacity>
                   </View>
@@ -187,7 +190,8 @@ export default function FirmasView({ partido }: FirmasViewProps) {
                 )
               ) : (
                 <View style={styles.signedBadge}>
-                  <Text style={styles.signedBadgeText}>✓ Firmado</Text>
+                  <VectorIcon name="check" size={14} color="#065f46" />
+                  <Text style={styles.signedBadgeText}>Firmado</Text>
                 </View>
               )}
             </View>

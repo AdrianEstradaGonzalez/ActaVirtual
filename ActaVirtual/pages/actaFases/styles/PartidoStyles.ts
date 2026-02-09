@@ -106,8 +106,27 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 6 * scale,
   },
 
+  setsIndicatorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6 * scale,
+  },
+
+  setCircle: {
+    width: 14 * scale,
+    height: 14 * scale,
+    borderRadius: 7 * scale,
+    borderWidth: 2,
+    borderColor: theme.primaryLight,
+    backgroundColor: "transparent",
+  },
+
+  setCircleFilled: {
+    backgroundColor: theme.primaryLight,
+  },
+
   setIndicator: {
-    backgroundColor: theme.primary,
+    backgroundColor: theme.primaryLight,
     paddingHorizontal: 12 * scale,
     paddingVertical: 4 * scale,
     borderRadius: 6 * scale,
@@ -348,8 +367,8 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
 
   capitanBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: 2,
+    right: 2,
     backgroundColor: theme.primary,
     width: 18 * scale,
     height: 18 * scale,
@@ -359,6 +378,7 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#fff",
     elevation: 3,
+    zIndex: 10,
   },
 
   capitanText: {
@@ -468,13 +488,14 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
     borderColor: "#d1d5db",
     borderBottomLeftRadius: 8 * scale,
     borderBottomRightRadius: 8 * scale,
-    minHeight: 60 * scale,
     padding: 6 * scale,
+    minHeight: 60 * scale,
   },
 
   banquilloJugadores: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "flex-start",
   },
 
   jugadorBanquillo: {
@@ -485,18 +506,57 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 8 * scale,
     paddingVertical: 4 * scale,
     margin: 3 * scale,
+    minWidth: 36 * scale,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   jugadorBanquilloText: {
     fontSize: 13 * scale,
     fontWeight: "700",
     color: "#374151",
+    textAlign: "center",
   },
 
   staffBanquillo: {
     backgroundColor: "#fef3c7",
     borderWidth: 2,
     borderColor: "#f59e0b",
+  },
+
+  staffBanquilloItem: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6 * scale,
+    paddingHorizontal: 8 * scale,
+    marginBottom: 4 * scale,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 4 * scale,
+    borderLeftWidth: 3 * scale,
+    borderLeftColor: theme.primary,
+    gap: 8 * scale,
+  },
+
+  staffBanquilloCodigo: {
+    fontSize: 11 * scale,
+    fontWeight: "700",
+    color: theme.primary,
+    minWidth: 24 * scale,
+  },
+
+  staffBanquilloText: {
+    fontSize: 11 * scale,
+    fontWeight: "600",
+    color: "#374151",
+    flex: 1,
+  },
+
+  banquilloSeparator: {
+    width: "100%",
+    height: 1,
+    backgroundColor: "#d1d5db",
+    marginVertical: 8 * scale,
   },
 
   // ===== CONTROLES =====
@@ -518,31 +578,43 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
 
   controlBox: {
     backgroundColor: "#fff",
-    borderRadius: 8 * scale,
-    padding: 8 * scale,
-    marginBottom: 6 * scale,
-    borderWidth: 1,
+    borderRadius: 10 * scale,
+    paddingVertical: 10 * scale,
+    paddingHorizontal: 12 * scale,
+    marginBottom: 8 * scale,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    minHeight: 68 * scale,
+    justifyContent: "space-between",
+  },
+
+  controlIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 6 * scale,
+    marginBottom: 8 * scale,
   },
 
   controlTitle: {
-    fontSize: 10 * scale,
+    fontSize: 11 * scale,
     fontWeight: "700",
     color: "#6b7280",
-    textAlign: "center",
-    marginBottom: 4 * scale,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
 
   controlValue: {
-    fontSize: 16 * scale,
+    fontSize: 22 * scale,
     fontWeight: "900",
     color: theme.primary,
     textAlign: "center",
+    letterSpacing: 0.5,
   },
 
   // ===== MODAL =====
@@ -669,5 +741,69 @@ export const createPartidoStyles = (theme: Theme) => StyleSheet.create({
 
   rojaText: {
     color: "#991b1b",
+  },
+
+  // ===== BOTÓN SWAP =====
+  swapButtonContainer: {
+    position: "absolute",
+    top: -18,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 30,
+  },
+
+  swapButton: {
+    backgroundColor: "#facc15",
+    padding: 6 * scale,
+    borderRadius: 30 * scale,
+    borderWidth: 1,
+    borderColor: "#d97706",
+  },
+
+  swapIcon: {
+    width: 24 * scale,
+    height: 24 * scale,
+    tintColor: "#000",
+  },
+
+  // ===== SCANNER QR =====
+  scannerContainer: {
+    flex: 1,
+    backgroundColor: "black",
+  },
+
+  scannerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  scannerFrame: {
+    width: 250,
+    height: 250,
+    borderColor: "white",
+    borderWidth: 2,
+    backgroundColor: "transparent",
+  },
+
+  scannerCancelButton: {
+    position: "absolute",
+    bottom: 50,
+    alignSelf: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: theme.primaryDark || "#f59e0b",
+    borderRadius: 8,
+  },
+
+  scannerCancelText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });

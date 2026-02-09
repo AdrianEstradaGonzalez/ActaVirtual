@@ -9,9 +9,11 @@ type NavBarBackProps = {
   isLeft?: boolean; // true si la flecha debe estar a la izquierda
   title?: string;
   onMenuPress?: () => void; // función para abrir el drawer
+  showObservaciones?: boolean; // mostrar botón de observaciones
+  onObservacionesPress?: () => void; // función para abrir observaciones
 };
 
-export default function NavBarBack({ onBack, isLeft = true, title, onMenuPress }: NavBarBackProps) {
+export default function NavBarBack({ onBack, isLeft = true, title, onMenuPress, showObservaciones = false, onObservacionesPress }: NavBarBackProps) {
   const insets = useSafeAreaInsets();
   const { theme, assets, communityId } = useCommunity();
   
@@ -37,35 +39,58 @@ export default function NavBarBack({ onBack, isLeft = true, title, onMenuPress }
         justifyContent: "space-between",
       }}
     >
+      {/* Lado izquierdo - Menú */}
       {isLeft && (
         <TouchableOpacity onPress={onMenuPress || onBack}>
           <VectorIcon name={onMenuPress ? "menu" : "close"} size={28} color="#fff" />
         </TouchableOpacity>
       )}
       
-      {/* Logo condicional para Baleares y Asturias */}
-      {(communityId === 'baleares' || communityId === 'asturias') && isLeft && (
-        <View
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            overflow: "hidden",
-            backgroundColor: "#fff",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Image
-            source={assets.flag}
+      {/* Lado derecho - Observaciones (opcional) + Bandera */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        {/* Botón de observaciones (solo visible en fase de partido) */}
+        {showObservaciones && onObservacionesPress && (
+          <TouchableOpacity 
+            onPress={onObservacionesPress}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.15)",
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 16,
+              gap: 6,
+            }}
+          >
+            <VectorIcon name="note-outline" size={16} color="#ffffff" />
+            <Text style={{ color: "#ffffff", fontSize: 13, fontWeight: "500" }}>Observaciones</Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* Logo condicional para Baleares y Asturias */}
+        {(communityId === 'baleares' || communityId === 'asturias') && isLeft && (
+          <View
             style={{
               width: 28,
               height: 28,
-              resizeMode: "cover",
+              borderRadius: 14,
+              overflow: "hidden",
+              backgroundColor: "#fff",
+              justifyContent: "center",
+              alignItems: "center",
             }}
-          />
-        </View>
-      )}
+          >
+            <Image
+              source={assets.flag}
+              style={{
+                width: 28,
+                height: 28,
+                resizeMode: "cover",
+              }}
+            />
+          </View>
+        )}
+      </View>
 
       {(communityId === 'baleares' || communityId === 'asturias') && !isLeft && (
         <View

@@ -9,6 +9,7 @@ type SignatureCanvasProps = {
   minWidth?: number;
   maxWidth?: number;
   backgroundColor?: string;
+  disabled?: boolean;
 };
 
 type Point = {
@@ -17,17 +18,20 @@ type Point = {
 };
 
 export const SignatureCanvas = React.forwardRef<any, SignatureCanvasProps>(
-  ({ onEnd, onOK, penColor = '#000', backgroundColor = 'transparent' }, ref) => {
+  ({ onEnd, onOK, penColor = '#000', backgroundColor = 'transparent', disabled = false }, ref) => {
     const [paths, setPaths] = useState<string[]>([]);
     const [currentPath, setCurrentPath] = useState<Point[]>([]);
     const currentPathRef = useRef<Point[]>([]);
     const isDrawing = useRef(false);
+    const disabledRef = useRef(disabled);
+    disabledRef.current = disabled;
 
     const panResponder = useRef(
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => !disabledRef.current,
+        onMoveShouldSetPanResponder: () => !disabledRef.current,
         onPanResponderGrant: (evt) => {
+          if (disabledRef.current) return;
           isDrawing.current = true;
           const { locationX, locationY } = evt.nativeEvent;
           const start = [{ x: locationX, y: locationY }];

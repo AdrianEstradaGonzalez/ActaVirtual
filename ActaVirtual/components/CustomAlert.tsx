@@ -21,6 +21,15 @@ interface CustomAlertProps {
   onCancel: () => void;
   onAccept: () => void;
   showResetButton?: boolean;
+  customButtons?: Array<{
+    text: string;
+    icon?: React.ReactNode;
+    onPress: () => void;
+    isPrimary?: boolean;
+    disabled?: boolean;
+    outlined?: boolean;
+    outlineColor?: string;
+  }>;
 }
 
 export default function CustomAlert({
@@ -32,6 +41,7 @@ export default function CustomAlert({
   onCancel,
   onAccept,
   showResetButton = true,
+  customButtons,
 }: CustomAlertProps) {
   const MAX_MESSAGE_HEIGHT = Math.round(Dimensions.get('window').height * 0.5);
   
@@ -74,40 +84,86 @@ export default function CustomAlert({
 
           {/* Botones */}
           <View style={styles.buttonsContainer}>
-            {/* Reiniciar rotaciones - Solo si showResetButton es true */}
-            {showResetButton && onReset && (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={onReset}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.buttonText}>
-                  Reiniciar rotaciones
-                </Text>
-              </TouchableOpacity>
+            {customButtons ? (
+              // Botones personalizados
+              <>
+                {customButtons.map((button, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.button,
+                      button.isPrimary ? [styles.buttonPrimary, { backgroundColor: theme.primaryDark }] : styles.buttonOutline,
+                      button.outlined && { borderColor: button.outlineColor || theme.primary, borderWidth: 2 },
+                      button.disabled && { opacity: 0.5, backgroundColor: '#e5e7eb' },
+                    ]}
+                    onPress={button.disabled ? undefined : button.onPress}
+                    activeOpacity={button.disabled ? 1 : 0.7}
+                    disabled={button.disabled}
+                  >
+                    {button.icon && (
+                      <View style={{ width: 24, alignItems: 'center', marginRight: 8 }}>
+                        {button.icon}
+                      </View>
+                    )}
+                    <Text style={[
+                      styles.buttonText,
+                      button.isPrimary ? styles.buttonPrimaryText : styles.buttonOutlineText,
+                      button.outlined && { color: button.outlineColor || theme.primary },
+                      button.disabled && { color: '#9ca3af' },
+                    ]}>
+                      {button.text}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonOutline]}
+                  onPress={onCancel}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.buttonText, styles.buttonOutlineText]}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Botones por defecto
+              <>
+                {/* Reiniciar rotaciones - Solo si showResetButton es true */}
+                {showResetButton && onReset && (
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={onReset}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.buttonText}>
+                      Reiniciar rotaciones
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Cancelar */}
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonOutline]}
+                  onPress={onCancel}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.buttonText, styles.buttonOutlineText]}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Aceptar */}
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonPrimary, { backgroundColor: theme.primaryDark }]}
+                  onPress={onAccept}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.buttonText, styles.buttonPrimaryText]}>
+                    Aceptar
+                  </Text>
+                </TouchableOpacity>
+              </>
             )}
-
-            {/* Cancelar */}
-            <TouchableOpacity
-              style={[styles.button, styles.buttonOutline]}
-              onPress={onCancel}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.buttonText, styles.buttonOutlineText]}>
-                Cancelar
-              </Text>
-            </TouchableOpacity>
-
-            {/* Aceptar */}
-            <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary, { backgroundColor: theme.primaryDark }]}
-              onPress={onAccept}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.buttonText, styles.buttonPrimaryText]}>
-                Aceptar
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -188,6 +244,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
     backgroundColor: '#f9fafb',
     borderWidth: 1,
     borderColor: '#e5e7eb',
